@@ -52,8 +52,8 @@
         }
 
         .letter-box.revealed { background-color: #e6fffa; border-color: #38b2ac; transform: rotateY(360deg); }
-        .letter-box.solved { background-color: #f0fff4; border-color: #48bb78; color: #2f855a; }
-        .letter-box.first-letter { background-color: #fef3c7; border-color: #f59e0b; color: #b45309; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2); }
+        .letter-box.solved { background-color: #d1fae5; color: #065f46; }
+        .letter-box.first-letter { background-color: #fef3c7; color: #b45309; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2); }
 
         .gematria-badge {
             background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a;
@@ -111,10 +111,10 @@
 
     <div class="text-right mb-6">
         <div class="flex justify-between items-end mb-1">
-            <h2 class="text-xs text-gray-400 font-bold uppercase tracking-widest">הקטגוריה:</h2>
+            <div></div>
             <span id="stage-text" class="text-xs text-blue-400 font-bold">שלב 1/8</span>
         </div>
-        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-tight leading-tight">טוען...</h1>
+        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-wider leading-tight">טוען...</h1>
     </div>
 
     <div class="mb-12 w-full">
@@ -217,7 +217,33 @@
     }
 
     function updateUI() {
-        document.getElementById('category-name').innerText = currentCategory.name;
+        const catNameEl = document.getElementById('category-name');
+        
+        // מפעיל אנימציית לוח שדה תעופה רק כשקטגוריה מתחלפת
+        if (catNameEl.dataset.currentName !== currentCategory.name) {
+            catNameEl.dataset.currentName = currentCategory.name;
+            let iteration = 0;
+            const chars = "אבגדהוזחטיכלמנסעפצקרשת";
+            clearInterval(catNameEl.interval);
+            
+            catNameEl.interval = setInterval(() => {
+                catNameEl.innerText = currentCategory.name
+                    .split("")
+                    .map((letter, index) => {
+                        if(index < Math.floor(iteration)) return letter;
+                        if(!/[א-ת]/.test(letter)) return letter; // מדלג על רווחים וסימני פיסוק
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    })
+                    .join("");
+                
+                if(iteration >= currentCategory.name.length){
+                    clearInterval(catNameEl.interval);
+                    catNameEl.innerText = currentCategory.name;
+                }
+                iteration += 1 / 2.5; // קובע את מהירות נעילת האותיות
+            }, 30);
+        }
+
         document.getElementById('score').innerText = score;
         document.getElementById('mistakes').innerText = mistakes;
         document.getElementById('streak').innerText = streak;
