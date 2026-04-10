@@ -5,13 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>משחק המילים נעמ"ה</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
+        /* טעינת הפונט המותאם אישית מה-GitHub */
+        @font-face {
+            font-family: 'Alberticole';
+            src: url('https://raw.githubusercontent.com/doriodorio/naama_word_gama/main/alberticole.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
         body {
+            /* פונט Assistant לכל האפליקציה */
             font-family: 'Assistant', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
         #words-list {
             display: flex;
             flex-direction: column;
@@ -19,108 +30,157 @@
             width: fit-content;
             margin-left: auto;
         }
+
         .word-row {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 16px;
         }
+
         .letters-container {
             display: flex;
             gap: 8px;
         }
+
         .letter-box {
+            /* שימוש בפונט Alberticole רק למילים המנוחשות */
+            font-family: 'Alberticole', 'Assistant', sans-serif;
             width: 45px;
             height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid #cbd5e0;
-            border-radius: 8px;
-            font-size: 1.5rem;
+            border-radius: 10px;
+            font-size: 1.8rem;
             font-weight: bold;
             background-color: white;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            line-height: 1;
+            padding-top: 4px;
         }
+
         .letter-box.revealed {
             background-color: #e6fffa;
             border-color: #38b2ac;
             transform: rotateY(360deg);
         }
+
         .letter-box.solved {
             background-color: #f0fff4;
             border-color: #48bb78;
             color: #2f855a;
         }
+
         .letter-box.first-letter {
             background-color: #fef3c7;
             border-color: #f59e0b;
             color: #b45309;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
         }
+
         .gematria-badge {
+            font-family: 'Assistant', sans-serif;
             background-color: #fffbeb;
             color: #92400e;
             border: 1px solid #fde68a;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: bold;
+            animation: fadeIn 0.5s ease;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
         .shake {
             animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
+
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
             20%, 80% { transform: translate3d(2px, 0, 0); }
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
+        
+        h1, h2, button, p, input {
+            font-family: 'Assistant', sans-serif;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-<div id="game-container" class="max-w-xl mx-auto bg-white rounded-2xl shadow-2xl p-6 md:p-10 relative overflow-hidden">
-    <div class="flex justify-between items-center mb-10 bg-gray-50 p-4 rounded-xl border border-gray-100">
+<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 relative overflow-hidden">
+    <!-- Stats Bar -->
+    <div class="flex justify-between items-center mb-10 bg-gray-50 p-5 rounded-2xl border border-gray-100">
         <div class="text-right">
-            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">ניקוד</p>
-            <p id="score" class="text-3xl font-black text-blue-600">0</p>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">ניקוד</p>
+            <p id="score" class="text-4xl font-extrabold text-blue-600">0</p>
         </div>
         <div class="text-center">
-            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">שלב</p>
-            <p id="stage-info" class="text-xl font-bold text-gray-700">1/20</p>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">שלב</p>
+            <p id="stage-info" class="text-2xl font-bold text-gray-700">1/20</p>
         </div>
         <div class="text-left">
-            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">טעויות</p>
-            <p id="mistakes" class="text-3xl font-black text-red-500">10</p>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">טעויות נותרו</p>
+            <p id="mistakes" class="text-4xl font-extrabold text-red-500">10</p>
         </div>
     </div>
 
-    <div class="text-right mb-6">
-        <h2 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">הקטגוריה:</h2>
+    <!-- Category Section -->
+    <div class="text-right mb-8">
+        <h2 class="text-sm text-gray-400 font-bold uppercase tracking-widest mb-1">הקטגוריה:</h2>
         <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-tight">טוען...</h1>
     </div>
 
-    <div class="flex justify-end mb-10">
+    <!-- Words Display -->
+    <div class="flex justify-end mb-12">
         <div id="words-list"></div>
     </div>
 
-    <div class="space-y-4">
-        <input type="text" id="word-input" dir="rtl" class="w-full text-right text-2xl p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all" placeholder="הקלד מילה...">
-        <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">שלח מילה</button>
-        <div class="grid grid-cols-2 gap-4">
-            <button id="hint-btn" onclick="getHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-xl">רמז</button>
-            <button onclick="giveUp()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-xl border border-red-200">נשברתי</button>
+    <!-- Game Controls -->
+    <div id="input-controls" class="space-y-5">
+        <input type="text" id="word-input" dir="rtl"
+               class="w-full text-right text-2xl p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm"
+               placeholder="הקלד מילה..."
+               autocomplete="off">
+        
+        <div class="grid grid-cols-1 gap-4">
+            <button onclick="checkWord()" class="bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg transition-transform active:scale-95">
+                שלח מילה
+            </button>
+            <div class="grid grid-cols-2 gap-4">
+                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50">
+                    תן לי אות
+                </button>
+                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50">
+                    יובי - תן בגימטריה
+                </button>
+            </div>
+            <button onclick="giveUp()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-2xl border border-red-100 transition-all active:scale-95">
+                נשברתי
+            </button>
         </div>
     </div>
-    <div id="feedback" class="mt-6 text-center h-6 font-bold text-lg"></div>
+
+    <div id="feedback" class="mt-8 text-center h-6 font-bold text-lg"></div>
 </div>
 
+<!-- End Game Modal -->
 <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl">
-        <div id="modal-icon" class="mb-4 text-6xl">🎮</div>
-        <h2 id="modal-title" class="text-3xl font-bold mb-2">המשחק נגמר</h2>
-        <p id="modal-body" class="text-xl text-gray-600 mb-8 font-medium leading-relaxed"></p>
-        <button onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700">שחק שוב</button>
+    <div class="bg-white rounded-[2rem] p-12 max-w-sm w-full text-center shadow-2xl">
+        <div id="modal-icon" class="mb-6 text-7xl">🎮</div>
+        <h2 id="modal-title" class="text-3xl font-black mb-3 text-gray-800">המשחק נגמר</h2>
+        <p id="modal-body" class="text-xl text-gray-600 mb-10 font-medium leading-relaxed"></p>
+        <button id="modal-action-btn" onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg">
+            שחק שוב
+        </button>
     </div>
 </div>
 
@@ -135,7 +195,7 @@
         { name: "עולם הרכב", pools: { 'נ': ["נתיב", "נורה", "ניווט"], 'ע': ["עגלה", "עצירה", "עוקף"], 'מ': ["מכונית", "מנוע", "מצבר"], 'ה': ["הילוכים", "הגה"] }},
         { name: "צמחים ופרחים", pools: { 'נ': ["נרקיס", "נורית", "נענע"], 'ע': ["עץ", "עלה", "ערבה"], 'מ': ["מרגנית", "מרווה", "מור"], 'ה': ["הדס", "הרדוף"] }},
         { name: "ערים בישראל", pools: { 'נ': ["נתניה", "נשר", "נהריה"], 'ע': ["עכו", "עפולה", "ערד"], 'מ': ["מודיעין", "מעלות", "מטולה"], 'ה': ["הרצליה", "הוד השרון"] }},
-        { name: "מאכלים", pools: { 'נ': ["נקניקייה", "נזיד", "נאגטס"], 'ע': ["עוף", "עוגה", "עדשים"], 'מ': ["מרק", "מלאווח", "מוסקה"], 'ה': ["המבורגר", "הרינג"] }},
+        { name: "מאכלים", pools: { 'נ': ["נקטרינה", "נזיד", "נאגטס"], 'ע': ["עוף", "עוגה", "עדשים"], 'מ': ["מרק", "מלאווח", "מוסקה"], 'ה': ["המבורגר", "הרינג"] }},
         { name: "כלי נגינה", pools: { 'נ': ["נבל"], 'ע': ["עוגב", "עוד"], 'מ': ["מפוחית", "מצילתיים"], 'ה': ["הרמוניקה"] }},
         { name: "לבוש ואופנה", pools: { 'נ': ["נעליים", "נזם"], 'ע': ["עניבה", "עגיל"], 'מ': ["מעיל", "מכנסיים", "מטפחת"], 'ה': ["הינומה"] }},
         { name: "עולם המחשבים", pools: { 'נ': ["נתב", "נייד"], 'ע': ["עכבר", "עיבוד", "ענן"], 'מ': ["מקלדת", "מסך", "מדפסת"], 'ה': ["הורדה", "התקנה"] }},
@@ -149,7 +209,10 @@
     ];
 
     const gematriaMap = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
-    let usedIndices = [], currentCategory = null, currentWords = [], score = 0, mistakes = 10, hintsRemaining = 3, solvedWords = [false, false, false, false], revealedLetters = [[0],[0],[0],[0]], gematriaRevealed = [false, false, false, false];
+    let usedIndices = [], currentCategory = null, currentWords = [], score = 0, mistakes = 10;
+    let letterHintsRemaining = 2;
+    let gematriaHintsRemaining = 2;
+    let solvedWords = [false, false, false, false], revealedLetters = [[0],[0],[0],[0]], gematriaRevealed = [false, false, false, false];
 
     function calculateGematria(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); }
     function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
@@ -159,7 +222,11 @@
         let r; do { r = Math.floor(Math.random() * categoryPools.length); } while (usedIndices.includes(r));
         usedIndices.push(r); currentCategory = categoryPools[r];
         currentWords = [getRandom(currentCategory.pools['נ']), getRandom(currentCategory.pools['ע']), getRandom(currentCategory.pools['מ']), getRandom(currentCategory.pools['ה'])];
-        hintsRemaining = 3; solvedWords = [false,false,false,false]; gematriaRevealed = [false,false,false,false]; revealedLetters = [[0],[0],[0],[0]];
+        
+        letterHintsRemaining = 2;
+        gematriaHintsRemaining = 2;
+        
+        solvedWords = [false,false,false,false]; gematriaRevealed = [false,false,false,false]; revealedLetters = [[0],[0],[0],[0]];
         updateUI(); document.getElementById('feedback').innerText = ""; document.getElementById('word-input').value = ""; document.getElementById('word-input').focus();
     }
 
@@ -168,7 +235,15 @@
         document.getElementById('score').innerText = score;
         document.getElementById('mistakes').innerText = mistakes;
         document.getElementById('stage-info').innerText = `${usedIndices.length}/20`;
-        const hb = document.getElementById('hint-btn'); hb.disabled = hintsRemaining <= 0 || solvedWords.every(v => v); hb.innerText = `רמז (${hintsRemaining})`;
+        
+        const lb = document.getElementById('letter-hint-btn');
+        lb.disabled = letterHintsRemaining <= 0 || solvedWords.every(v => v);
+        lb.innerText = `תן לי אות (${letterHintsRemaining})`;
+        
+        const gb = document.getElementById('gematria-hint-btn');
+        gb.disabled = gematriaHintsRemaining <= 0 || solvedWords.every(v => v);
+        gb.innerText = `יובי - תן בגימטריה (${gematriaHintsRemaining})`;
+
         const wl = document.getElementById('words-list'); wl.innerHTML = '';
         currentWords.forEach((word, idx) => {
             const row = document.createElement('div'); row.className = `word-row ${solvedWords[idx] ? 'opacity-80' : 'opacity-100'}`;
@@ -177,6 +252,7 @@
                 const b = document.createElement('div'); b.className = `letter-box ${cIdx === 0 ? 'first-letter' : ''}`;
                 if (char === " ") { b.style.border = "none"; b.style.background = "transparent"; b.style.width = "15px"; }
                 else if (solvedWords[idx] || revealedLetters[idx].includes(cIdx)) { b.innerText = char; b.classList.add('revealed'); if (solvedWords[idx]) b.classList.add('solved'); }
+                else { b.innerText = ""; }
                 lc.appendChild(b);
             });
             row.appendChild(lc);
@@ -207,11 +283,38 @@
         updateUI();
     }
 
-    function getHint() {
-        if (hintsRemaining <= 0) return;
+    function getLetterHint() {
+        if (letterHintsRemaining <= 0) return;
+        const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
+        if (uI.length === 0) return;
+        
+        // בחירת מילה אקראית שלא נפתרה
+        const randomWordIdx = uI[Math.floor(Math.random() * uI.length)];
+        const targetWord = currentWords[randomWordIdx];
+        
+        // בחירת אות אקראית שטרם נחשפה
+        const unrevealedIdxs = [];
+        [...targetWord].forEach((c, i) => {
+            if (c !== " " && !revealedLetters[randomWordIdx].includes(i)) unrevealedIdxs.push(i);
+        });
+        
+        if (unrevealedIdxs.length > 0) {
+            const randomCharIdx = unrevealedIdxs[Math.floor(Math.random() * unrevealedIdxs.length)];
+            revealedLetters[randomWordIdx].push(randomCharIdx);
+            letterHintsRemaining--;
+            updateUI();
+        }
+    }
+
+    function getGematriaHint() {
+        if (gematriaHintsRemaining <= 0) return;
         const uI = solvedWords.map((v, x) => (!v && !gematriaRevealed[x] ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
-        gematriaRevealed[uI[Math.floor(Math.random() * uI.length)]] = true; hintsRemaining--; updateUI();
+        
+        const randomWordIdx = uI[Math.floor(Math.random() * uI.length)];
+        gematriaRevealed[randomWordIdx] = true;
+        gematriaHintsRemaining--;
+        updateUI();
     }
 
     function giveUp() { solvedWords = [true,true,true,true]; updateUI(); setTimeout(() => showGameOver(false, true), 800); }
