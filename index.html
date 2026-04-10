@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק המילים נעמ"ה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        #words-list {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: fit-content;
+            margin-left: auto;
+        }
+        .word-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .letters-container {
+            display: flex;
+            gap: 8px;
+        }
+        .letter-box {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .letter-box.revealed {
+            background-color: #e6fffa;
+            border-color: #38b2ac;
+            transform: rotateY(360deg);
+        }
+        .letter-box.solved {
+            background-color: #f0fff4;
+            border-color: #48bb78;
+            color: #2f855a;
+        }
+        .letter-box.first-letter {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            color: #b45309;
+        }
+        .gematria-badge {
+            background-color: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div id="game-container" class="max-w-xl mx-auto bg-white rounded-2xl shadow-2xl p-6 md:p-10 relative overflow-hidden">
+    <div class="flex justify-between items-center mb-10 bg-gray-50 p-4 rounded-xl border border-gray-100">
+        <div class="text-right">
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">ניקוד</p>
+            <p id="score" class="text-3xl font-black text-blue-600">0</p>
+        </div>
+        <div class="text-center">
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">שלב</p>
+            <p id="stage-info" class="text-xl font-bold text-gray-700">1/20</p>
+        </div>
+        <div class="text-left">
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">טעויות</p>
+            <p id="mistakes" class="text-3xl font-black text-red-500">10</p>
+        </div>
+    </div>
+
+    <div class="text-right mb-6">
+        <h2 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">הקטגוריה:</h2>
+        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-tight">טוען...</h1>
+    </div>
+
+    <div class="flex justify-end mb-10">
+        <div id="words-list"></div>
+    </div>
+
+    <div class="space-y-4">
+        <input type="text" id="word-input" dir="rtl" class="w-full text-right text-2xl p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all" placeholder="הקלד מילה...">
+        <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">שלח מילה</button>
+        <div class="grid grid-cols-2 gap-4">
+            <button id="hint-btn" onclick="getHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-xl">רמז</button>
+            <button onclick="giveUp()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-xl border border-red-200">נשברתי</button>
+        </div>
+    </div>
+    <div id="feedback" class="mt-6 text-center h-6 font-bold text-lg"></div>
+</div>
+
+<div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl">
+        <div id="modal-icon" class="mb-4 text-6xl">🎮</div>
+        <h2 id="modal-title" class="text-3xl font-bold mb-2">המשחק נגמר</h2>
+        <p id="modal-body" class="text-xl text-gray-600 mb-8 font-medium leading-relaxed"></p>
+        <button onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700">שחק שוב</button>
+    </div>
+</div>
+
+<script>
+    const categoryPools = [
+        { name: "חיות", pools: { 'נ': ["נמר", "נחש", "נשר", "נמלה"], 'ע': ["עטלף", "עכביש", "עקרב", "עורב"], 'מ': ["מקק", "מדוזה", "ממותה", "מיינה"], 'ה': ["היפופוטם", "הודו", "הוברה"] }},
+        { name: "פירות וירקות", pools: { 'נ': ["נקטרינה", "נענע", "נבטים"], 'ע': ["ענבים", "עגבנייה", "עירית", "עולש"], 'מ': ["מלון", "מלפפון", "מנגו", "מנדרינה"], 'ה': ["הדר", "הל"] }},
+        { name: "חפצים בבית", pools: { 'נ': ["נברשת", "נר", "נפה", "נייר"], 'ע': ["עציץ", "עריסה", "עיתון", "עט"], 'מ': ["מנורה", "מראה", "מגהץ", "מזלג"], 'ה': ["הדום", "הליכון"] }},
+        { name: "מקצועות", pools: { 'נ': ["נגר", "נחת", "נפח"], 'ע': ["עורך דין", "עיתונאי", "עגלון"], 'מ': ["מורה", "מהנדס", "מכונאי", "מנהל"], 'ה': ["הנדסאי", "היסטוריון"] }},
+        { name: "איברים בגוף", pools: { 'נ': ["נחיר", "נמש", "ניב"], 'ע': ["עצם", "עין", "עקב", "עורק"], 'מ': ["מצח", "מוח", "מעי"], 'ה': ["הלבלב", "הכבד", "העור"] }},
+        { name: "מדינות", pools: { 'נ': ["נורווגיה", "נמיביה", "נפאל"], 'ע': ["עיראק", "עומאן"], 'מ': ["מרוקו", "מצרים", "מקסיקו"], 'ה': ["הולנד", "הודו", "הונגריה"] }},
+        { name: "עולם הרכב", pools: { 'נ': ["נתיב", "נורה", "ניווט"], 'ע': ["עגלה", "עצירה", "עוקף"], 'מ': ["מכונית", "מנוע", "מצבר"], 'ה': ["הילוכים", "הגה"] }},
+        { name: "צמחים ופרחים", pools: { 'נ': ["נרקיס", "נורית", "נענע"], 'ע': ["עץ", "עלה", "ערבה"], 'מ': ["מרגנית", "מרווה", "מור"], 'ה': ["הדס", "הרדוף"] }},
+        { name: "ערים בישראל", pools: { 'נ': ["נתניה", "נשר", "נהריה"], 'ע': ["עכו", "עפולה", "ערד"], 'מ': ["מודיעין", "מעלות", "מטולה"], 'ה': ["הרצליה", "הוד השרון"] }},
+        { name: "מאכלים", pools: { 'נ': ["נקניקייה", "נזיד", "נאגטס"], 'ע': ["עוף", "עוגה", "עדשים"], 'מ': ["מרק", "מלאווח", "מוסקה"], 'ה': ["המבורגר", "הרינג"] }},
+        { name: "כלי נגינה", pools: { 'נ': ["נבל"], 'ע': ["עוגב", "עוד"], 'מ': ["מפוחית", "מצילתיים"], 'ה': ["הרמוניקה"] }},
+        { name: "לבוש ואופנה", pools: { 'נ': ["נעליים", "נזם"], 'ע': ["עניבה", "עגיל"], 'מ': ["מעיל", "מכנסיים", "מטפחת"], 'ה': ["הינומה"] }},
+        { name: "עולם המחשבים", pools: { 'נ': ["נתב", "נייד"], 'ע': ["עכבר", "עיבוד", "ענן"], 'מ': ["מקלדת", "מסך", "מדפסת"], 'ה': ["הורדה", "התקנה"] }},
+        { name: "דמויות מהתנ\"ך", pools: { 'נ': ["נח", "נעמי", "נתן"], 'ע': ["עשו", "עזרא", "עלי"], 'מ': ["משה", "מרדכי", "מרים"], 'ה': ["הבל", "הגר", "הושע"] }},
+        { name: "טבע ונוף", pools: { 'נ': ["נחל", "נקיק"], 'ע': ["עמק", "ענן", "ערפל"], 'מ': ["מערה", "מפל", "מישור"], 'ה': ["הר"] }},
+        { name: "רהיטים", pools: { 'נ': ["נדנדה"], 'ע': ["עריסה"], 'מ': ["מיטה", "מדף", "מזנון"], 'ה': ["הדום"] }},
+        { name: "תכונות אופי", pools: { 'נ': ["נדיבות", "נאמנות", "נחישות"], 'ע': ["עקשנות", "עצלות", "ענווה"], 'מ': ["מופנמות", "מנהיגות", "מסירות"], 'ה': ["התמדה"] }},
+        { name: "עולם הספורט", pools: { 'נ': ["נבחרת", "ניצחון"], 'ע': ["ענף", "עבירה"], 'מ': ["מדליה", "מגרש", "מאמן"], 'ה': ["התעמלות", "הגנה", "התקפה"] }},
+        { name: "עולם האגדות", pools: { 'נ': ["נסיך", "נסיכה", "ננס"], 'ע': ["ענק"], 'מ': ["מכשפה", "מפלצת"], 'ה': ["הגמד", "הדרקון", "הפיה"] }},
+        { name: "אמנות ויצירה", pools: { 'נ': ["נייר", "נצנצים"], 'ע': ["עט", "עיצוב", "עיפרון"], 'מ': ["מכחול", "מספריים"], 'ה': ["הבלטה", "הדבקה"] }}
+    ];
+
+    const gematriaMap = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
+    let usedIndices = [], currentCategory = null, currentWords = [], score = 0, mistakes = 10, hintsRemaining = 3, solvedWords = [false, false, false, false], revealedLetters = [[0],[0],[0],[0]], gematriaRevealed = [false, false, false, false];
+
+    function calculateGematria(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); }
+    function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
+
+    function initGame() {
+        if (usedIndices.length === categoryPools.length) { showGameOver(true); return; }
+        let r; do { r = Math.floor(Math.random() * categoryPools.length); } while (usedIndices.includes(r));
+        usedIndices.push(r); currentCategory = categoryPools[r];
+        currentWords = [getRandom(currentCategory.pools['נ']), getRandom(currentCategory.pools['ע']), getRandom(currentCategory.pools['מ']), getRandom(currentCategory.pools['ה'])];
+        hintsRemaining = 3; solvedWords = [false,false,false,false]; gematriaRevealed = [false,false,false,false]; revealedLetters = [[0],[0],[0],[0]];
+        updateUI(); document.getElementById('feedback').innerText = ""; document.getElementById('word-input').value = ""; document.getElementById('word-input').focus();
+    }
+
+    function updateUI() {
+        document.getElementById('category-name').innerText = currentCategory.name;
+        document.getElementById('score').innerText = score;
+        document.getElementById('mistakes').innerText = mistakes;
+        document.getElementById('stage-info').innerText = `${usedIndices.length}/20`;
+        const hb = document.getElementById('hint-btn'); hb.disabled = hintsRemaining <= 0 || solvedWords.every(v => v); hb.innerText = `רמז (${hintsRemaining})`;
+        const wl = document.getElementById('words-list'); wl.innerHTML = '';
+        currentWords.forEach((word, idx) => {
+            const row = document.createElement('div'); row.className = `word-row ${solvedWords[idx] ? 'opacity-80' : 'opacity-100'}`;
+            const lc = document.createElement('div'); lc.className = "letters-container";
+            [...word].forEach((char, cIdx) => {
+                const b = document.createElement('div'); b.className = `letter-box ${cIdx === 0 ? 'first-letter' : ''}`;
+                if (char === " ") { b.style.border = "none"; b.style.background = "transparent"; b.style.width = "15px"; }
+                else if (solvedWords[idx] || revealedLetters[idx].includes(cIdx)) { b.innerText = char; b.classList.add('revealed'); if (solvedWords[idx]) b.classList.add('solved'); }
+                lc.appendChild(b);
+            });
+            row.appendChild(lc);
+            if (gematriaRevealed[idx] && !solvedWords[idx]) { const bg = document.createElement('span'); bg.className = "gematria-badge"; bg.innerText = `גימטריה: ${calculateGematria(word)}`; row.appendChild(bg); }
+            wl.appendChild(row);
+        });
+        if (mistakes <= 0) showGameOver(false);
+    }
+
+    function checkWord() {
+        const iF = document.getElementById('word-input'); const i = iF.value.trim(); if (!i) return;
+        let fIdx = -1; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i === currentWords[x]) { fIdx = x; break; } }
+        const fb = document.getElementById('feedback');
+        if (fIdx !== -1) {
+            const tw = currentWords[fIdx]; const al = [...tw].filter((c, x) => c !== " " && !revealedLetters[fIdx].includes(x)).length;
+            score += al; solvedWords[fIdx] = true;
+            const sc = new Set([...tw].filter(c => c !== " "));
+            currentWords.forEach((w, wI) => { if (!solvedWords[wI]) { [...w].forEach((c, cI) => { if (sc.has(c) && !revealedLetters[wI].includes(cI)) revealedLetters[wI].push(cI); }); } });
+            fb.innerText = `מצוין! "${tw}" (+${al})`; fb.className = "mt-6 text-center h-6 font-bold text-lg text-green-600"; iF.value = "";
+            if (solvedWords.every(v => v)) setTimeout(() => { fb.innerText = "מעולה! עוברים שלב..."; setTimeout(initGame, 1500); }, 500);
+        } else {
+            let nm = false; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i[0] === currentWords[x][0] && i.length === currentWords[x].length) { nm = true; break; } }
+            mistakes--; const fU = solvedWords.indexOf(false); const p = fU !== -1 ? currentWords[fU].replace(/\s/g, '').length : 5; score = Math.max(0, score - p);
+            fb.innerText = nm ? "נסיון יפה אבל חשבתי על משהו אחר" : `טעות! (יורדות ${p} נקודות)`;
+            fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
+            document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500); iF.value = "";
+        }
+        updateUI();
+    }
+
+    function getHint() {
+        if (hintsRemaining <= 0) return;
+        const uI = solvedWords.map((v, x) => (!v && !gematriaRevealed[x] ? x : -1)).filter(x => x !== -1);
+        if (uI.length === 0) return;
+        gematriaRevealed[uI[Math.floor(Math.random() * uI.length)]] = true; hintsRemaining--; updateUI();
+    }
+
+    function giveUp() { solvedWords = [true,true,true,true]; updateUI(); setTimeout(() => showGameOver(false, true), 800); }
+
+    function showGameOver(won, gU = false) {
+        const m = document.getElementById('modal'); const b = document.getElementById('modal-body'); m.classList.remove('hidden');
+        if (gU) { document.getElementById('modal-icon').innerText = "❤️"; document.getElementById('modal-title').innerText = "לא נורא!"; b.innerText = `אין כמו נעמה ולך יש ${score} נקודות`; }
+        else if (won) { document.getElementById('modal-icon').innerText = "🏆"; document.getElementById('modal-title').innerText = "ניצחון!"; b.innerText = `אין כמו נעמה ולך יש ${score} נקודות`; }
+        else { document.getElementById('modal-icon').innerText = "🎮"; document.getElementById('modal-title').innerText = "המשחק נגמר"; b.innerText = `אין כמו נעמה ולך יש ${score} נקודות`; }
+    }
+
+    function resetGame(f) { if (f) { score = 0; mistakes = 10; usedIndices = []; } document.getElementById('modal').classList.add('hidden'); initGame(); }
+    document.getElementById('word-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkWord(); });
+    window.onload = initGame;
+</script>
+</body>
+</html>
