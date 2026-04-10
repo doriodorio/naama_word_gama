@@ -22,18 +22,33 @@
 
         #words-list {
             display: flex; flex-direction: column; align-items: flex-start;
-            width: fit-content; margin-left: auto;
+            width: 100%; /* Fixed: prevents pushing out of bounds */
         }
 
-        .word-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-        .letters-container { display: flex; gap: 8px; }
+        .word-row { 
+            display: flex; align-items: center; 
+            gap: clamp(6px, 2vw, 12px); /* Responsive gap */
+            margin-bottom: 16px; 
+            max-width: 100%; 
+        }
+        
+        .letters-container { 
+            display: flex; 
+            gap: clamp(3px, 1.5vw, 8px); /* Responsive gap */
+            flex-wrap: wrap; /* Allows wrapping on extremely tiny screens if needed */
+            justify-content: flex-start;
+        }
 
         .letter-box {
             font-family: 'Alberticole', 'Assistant', sans-serif;
-            width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
-            border: 2px solid #cbd5e0; border-radius: 10px; font-size: 1.8rem;
+            width: clamp(28px, 8.5vw, 45px); /* Scales smoothly on mobile */
+            height: clamp(28px, 8.5vw, 45px); /* Scales smoothly on mobile */
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid #cbd5e0; border-radius: 8px; 
+            font-size: clamp(1.2rem, 5.5vw, 1.8rem); /* Responsive font */
             font-weight: bold; background-color: white; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1; padding-top: 4px;
+            flex-shrink: 0;
         }
 
         .letter-box.revealed { background-color: #e6fffa; border-color: #38b2ac; transform: rotateY(360deg); }
@@ -42,7 +57,10 @@
 
         .gematria-badge {
             background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a;
-            padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; animation: fadeIn 0.5s ease;
+            padding: clamp(2px, 1vw, 4px) clamp(6px, 2vw, 12px);
+            border-radius: 20px; font-size: clamp(0.7rem, 3vw, 0.9rem);
+            font-weight: bold; animation: fadeIn 0.5s ease;
+            white-space: nowrap;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
@@ -67,9 +85,9 @@
         .progress-bar-inner { transition: width 0.5s ease-in-out; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-2 sm:p-4 md:p-8">
 
-<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 relative overflow-hidden">
+<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 relative overflow-hidden">
     <!-- Progress Bar -->
     <div class="w-full bg-gray-100 h-2 rounded-full mb-6 overflow-hidden">
         <div id="progress-bar" class="progress-bar-inner bg-blue-500 h-full w-0"></div>
@@ -94,18 +112,18 @@
     <div class="text-right mb-6">
         <div class="flex justify-between items-end mb-1">
             <h2 class="text-xs text-gray-400 font-bold uppercase tracking-widest">הקטגוריה:</h2>
-            <span id="stage-text" class="text-xs text-blue-400 font-bold">שלב 1/20</span>
+            <span id="stage-text" class="text-xs text-blue-400 font-bold">שלב 1/8</span>
         </div>
         <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-tight leading-tight">טוען...</h1>
     </div>
 
-    <div class="flex justify-end mb-10">
+    <div class="mb-12 w-full">
         <div id="words-list"></div>
     </div>
 
     <div id="input-controls" class="space-y-4">
         <input type="text" id="word-input" dir="rtl"
-               class="w-full text-right text-2xl p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm"
+               class="w-full text-right text-2xl p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-50"
                placeholder="הקלד מילה..."
                autocomplete="off">
         
@@ -114,11 +132,11 @@
                 שלח מילה
             </button>
             <div class="grid grid-cols-2 gap-3">
-                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50">
+                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base">
                     תן לי אות
                 </button>
-                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50">
-                    יובי - גימטריה
+                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base">
+                    יובי תן בגימטריה
                 </button>
             </div>
             <button onclick="giveUp()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 rounded-xl border border-red-100 transition-all active:scale-95 text-sm">
@@ -174,7 +192,7 @@
     function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
 
     function initGame() {
-        if (usedIndices.length === categoryPools.length) { showGameOver(true); return; }
+        if (usedIndices.length === 8) { showGameOver(true); return; }
         let r; do { r = Math.floor(Math.random() * categoryPools.length); } while (usedIndices.includes(r));
         usedIndices.push(r); currentCategory = categoryPools[r];
         currentWords = [getRandom(currentCategory.pools['נ']), getRandom(currentCategory.pools['ע']), getRandom(currentCategory.pools['מ']), getRandom(currentCategory.pools['ה'])];
@@ -203,9 +221,9 @@
         document.getElementById('score').innerText = score;
         document.getElementById('mistakes').innerText = mistakes;
         document.getElementById('streak').innerText = streak;
-        document.getElementById('stage-text').innerText = `שלב ${usedIndices.length}/20`;
+        document.getElementById('stage-text').innerText = `שלב ${usedIndices.length}/8`;
         
-        const progress = (usedIndices.length / 20) * 100;
+        const progress = (usedIndices.length / 8) * 100;
         document.getElementById('progress-bar').style.width = progress + '%';
         
         const lb = document.getElementById('letter-hint-btn');
@@ -214,7 +232,9 @@
         
         const gb = document.getElementById('gematria-hint-btn');
         gb.disabled = gematriaHintsRemaining <= 0 || solvedWords.every(v => v);
-        gb.innerText = `יובי - גימטריה (${gematriaHintsRemaining})`;
+        gb.innerText = `יובי תן בגימטריה (${gematriaHintsRemaining})`;
+
+        document.getElementById('word-input').disabled = solvedWords.every(v => v);
 
         const wl = document.getElementById('words-list'); wl.innerHTML = '';
         currentWords.forEach((word, idx) => {
@@ -222,7 +242,10 @@
             const lc = document.createElement('div'); lc.className = "letters-container";
             [...word].forEach((char, cIdx) => {
                 const b = document.createElement('div'); b.className = `letter-box ${cIdx === 0 ? 'first-letter' : ''}`;
-                if (char === " ") { b.style.border = "none"; b.style.background = "transparent"; b.style.width = "15px"; }
+                if (char === " ") { 
+                    b.style.border = "none"; b.style.background = "transparent"; 
+                    b.style.width = "clamp(10px, 3vw, 15px)"; b.style.boxShadow = "none";
+                }
                 else if (solvedWords[idx] || revealedLetters[idx].includes(cIdx)) { b.innerText = char; b.classList.add('revealed'); if (solvedWords[idx]) b.classList.add('solved'); }
                 else { b.innerText = ""; }
                 lc.appendChild(b);
@@ -231,10 +254,10 @@
             if (gematriaRevealed[idx] && !solvedWords[idx]) { const bg = document.createElement('span'); bg.className = "gematria-badge"; bg.innerText = `${calculateGematria(word)}`; row.appendChild(bg); }
             wl.appendChild(row);
         });
-        if (mistakes <= 0) showGameOver(false);
     }
 
     function checkWord() {
+        if (solvedWords.every(v => v)) return;
         const iF = document.getElementById('word-input'); const i = iF.value.trim(); if (!i) return;
         let fIdx = -1; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i === currentWords[x]) { fIdx = x; break; } }
         const fb = document.getElementById('feedback');
@@ -259,6 +282,7 @@
                 createConfetti();
                 setTimeout(() => { fb.innerText = "שלב הושלם! כל הכבוד!"; setTimeout(initGame, 1500); }, 500);
             }
+            updateUI();
         } else {
             let nm = false; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i[0] === currentWords[x][0] && i.length === currentWords[x].length) { nm = true; break; } }
             mistakes--; streak = 0;
@@ -269,12 +293,19 @@
             fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
             document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
             iF.value = "";
+
+            if (mistakes <= 0) {
+                solvedWords = [true,true,true,true];
+                updateUI();
+                setTimeout(() => showGameOver(false, false), 4000);
+            } else {
+                updateUI();
+            }
         }
-        updateUI();
     }
 
     function getLetterHint() {
-        if (letterHintsRemaining <= 0) return;
+        if (letterHintsRemaining <= 0 || solvedWords.every(v => v)) return;
         const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
         const randomWordIdx = uI[Math.floor(Math.random() * uI.length)];
@@ -288,14 +319,19 @@
     }
 
     function getGematriaHint() {
-        if (gematriaHintsRemaining <= 0) return;
+        if (gematriaHintsRemaining <= 0 || solvedWords.every(v => v)) return;
         const uI = solvedWords.map((v, x) => (!v && !gematriaRevealed[x] ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
         gematriaRevealed[uI[Math.floor(Math.random() * uI.length)]] = true;
         gematriaHintsRemaining--; updateUI();
     }
 
-    function giveUp() { solvedWords = [true,true,true,true]; updateUI(); setTimeout(() => showGameOver(false, true), 800); }
+    function giveUp() { 
+        if (solvedWords.every(v => v)) return;
+        solvedWords = [true,true,true,true]; 
+        updateUI(); 
+        setTimeout(() => showGameOver(false, true), 4000); 
+    }
 
     function showGameOver(won, gU = false) {
         const m = document.getElementById('modal'); const b = document.getElementById('modal-body'); m.classList.remove('hidden');
