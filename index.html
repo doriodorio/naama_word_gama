@@ -22,38 +22,38 @@
 
         #words-list {
             display: flex; flex-direction: column; align-items: flex-start;
-            width: 100%; /* Fixed: prevents pushing out of bounds */
+            width: 100%;
         }
 
         .word-row { 
             display: flex; align-items: center; 
-            gap: clamp(6px, 2vw, 12px); /* Responsive gap */
+            gap: clamp(6px, 2vw, 12px); 
             margin-bottom: 16px; 
             max-width: 100%; 
         }
         
         .letters-container { 
             display: flex; 
-            gap: clamp(3px, 1.5vw, 8px); /* Responsive gap */
-            flex-wrap: wrap; /* Allows wrapping on extremely tiny screens if needed */
+            gap: clamp(3px, 1.5vw, 8px); 
+            flex-wrap: wrap; 
             justify-content: flex-start;
         }
 
         .letter-box {
             font-family: 'Alberticole', 'Assistant', sans-serif;
-            width: clamp(28px, 8.5vw, 45px); /* Scales smoothly on mobile */
-            height: clamp(28px, 8.5vw, 45px); /* Scales smoothly on mobile */
+            width: clamp(28px, 8.5vw, 45px); 
+            height: clamp(28px, 8.5vw, 45px); 
             display: flex; align-items: center; justify-content: center;
             border: 2px solid #cbd5e0; border-radius: 8px; 
-            font-size: clamp(1.2rem, 5.5vw, 1.8rem); /* Responsive font */
+            font-size: clamp(1.2rem, 5.5vw, 1.8rem); 
             font-weight: bold; background-color: white; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1; padding-top: 4px;
             flex-shrink: 0;
         }
 
         .letter-box.revealed { background-color: #e6fffa; border-color: #38b2ac; transform: rotateY(360deg); }
-        .letter-box.solved { background-color: #d1fae5; color: #065f46; }
-        .letter-box.first-letter { background-color: #fef3c7; color: #b45309; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2); }
+        .letter-box.solved { background-color: #f0fff4; border-color: #48bb78; color: #2f855a; }
+        .letter-box.first-letter { background-color: #fef3c7; border-color: #f59e0b; color: #b45309; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2); }
 
         .gematria-badge {
             background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a;
@@ -73,7 +73,6 @@
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        /* קונפטי */
         .confetti {
             position: absolute; width: 10px; height: 10px; background-color: #f00;
             top: -10px; z-index: 100; animation: fall 3s linear forwards;
@@ -83,45 +82,60 @@
         }
 
         .progress-bar-inner { transition: width 0.5s ease-in-out; }
+
+        .hint-btn-style {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; min-height: 4rem; padding: 0.5rem; line-height: 1.2; text-align: center;
+        }
+
+        /* אנימציה כשהזמן אוזל */
+        @keyframes timerPulse {
+            0% { transform: scale(1); color: #dc2626; }
+            50% { transform: scale(1.1); color: #ef4444; }
+            100% { transform: scale(1); color: #dc2626; }
+        }
+        .timer-pulse {
+            animation: timerPulse 0.6s infinite;
+        }
     </style>
 </head>
 <body class="p-2 sm:p-4 md:p-8">
 
 <div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 relative overflow-hidden">
-    <!-- Progress Bar -->
-    <div class="w-full bg-gray-100 h-2 rounded-full mb-6 overflow-hidden">
-        <div id="progress-bar" class="progress-bar-inner bg-blue-500 h-full w-0"></div>
+    <!-- Progress Bar with Circle -->
+    <div class="relative w-full h-8 mb-6 mt-2">
+        <div class="absolute top-1/2 -translate-y-1/2 right-0 w-full h-2 bg-gray-100 rounded-full"></div>
+        <div id="progress-bar" class="absolute top-1/2 -translate-y-1/2 right-0 h-2 bg-blue-500 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
+        <div id="progress-circle" class="absolute top-1/2 -translate-y-1/2 translate-x-1/2 bg-blue-600 border-2 border-white text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500 ease-in-out" style="right: 0%;">
+            1
+        </div>
     </div>
 
     <!-- Stats Bar -->
-    <div class="grid grid-cols-3 gap-2 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-        <div class="text-center">
-            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">ניקוד</p>
-            <p id="score" class="text-3xl font-extrabold text-blue-600 leading-none">0</p>
-        </div>
-        <div class="text-center border-x border-gray-200">
-            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">רצף (Bonus)</p>
-            <p id="streak" class="text-3xl font-extrabold text-orange-500 leading-none">0</p>
+    <div class="grid grid-cols-2 gap-4 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+        <div class="text-center border-l border-gray-200">
+            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">ניקוד כולל</p>
+            <p id="score" class="text-4xl font-extrabold text-blue-600 leading-none transition-all">0</p>
         </div>
         <div class="text-center">
-            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">טעויות</p>
-            <p id="mistakes" class="text-3xl font-extrabold text-red-500 leading-none">10</p>
+            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">מונה מילה (1 דק')</p>
+            <p id="word-timer" class="text-4xl font-extrabold text-purple-600 leading-none transition-colors">1000</p>
         </div>
     </div>
 
     <div class="text-right mb-6">
-        <div class="flex justify-between items-end mb-1">
-            <div></div>
-            <span id="stage-text" class="text-xs text-blue-400 font-bold">שלב 1/8</span>
-        </div>
-        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-wider leading-tight">טוען...</h1>
+        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-wider leading-tight mt-2">טוען...</h1>
     </div>
 
-    <div class="mb-12 w-full">
+    <div class="mb-4 w-full">
         <div id="words-list"></div>
     </div>
 
     <div id="input-controls" class="space-y-4">
+        
+        <!-- חלונית הברדק -->
+        <div id="yoyo-display" class="hidden mb-2 p-3 bg-purple-50 text-purple-700 border-2 border-purple-200 rounded-xl text-center font-bold text-xl shadow-inner transition-all"></div>
+
         <input type="text" id="word-input" dir="rtl"
                class="w-full text-right text-2xl p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-50"
                placeholder="הקלד מילה..."
@@ -131,17 +145,18 @@
             <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg transition-all active:scale-95">
                 שלח מילה
             </button>
-            <div class="grid grid-cols-2 gap-3">
-                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base">
-                    תן לי אות
+            
+            <div class="grid grid-cols-3 gap-2">
+                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm hint-btn-style">
+                    <span>נעמה, תעזרי, תני אות</span><span id="letter-hint-count">(3)</span>
                 </button>
-                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base">
-                    יובי תן בגימטריה
+                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm hint-btn-style">
+                    <span>יובי, תן בגימטריה</span><span id="gematria-hint-count">(2)</span>
+                </button>
+                <button id="yoyo-hint-btn" onclick="getYoyoHint()" class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm border border-purple-200 hint-btn-style">
+                    <span>יויו, עשה ברדק!</span><span id="yoyo-hint-count">(1)</span>
                 </button>
             </div>
-            <button onclick="giveUp()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 rounded-xl border border-red-100 transition-all active:scale-95 text-sm">
-                נשברתי - גלה לי
-            </button>
         </div>
     </div>
 
@@ -184,12 +199,68 @@
     ];
 
     const gematriaMap = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
-    let usedIndices = [], currentCategory = null, currentWords = [], score = 0, mistakes = 10, streak = 0;
-    let letterHintsRemaining = 5, gematriaHintsRemaining = 2;
+    
+    let usedIndices = [], currentCategory = null, currentWords = [], score = 0;
+    
+    // משתני המונה החדשים
+    let currentTimer = 1000;
+    let timerInterval = null;
+
+    let letterHintsRemaining = 3;
+    let gematriaHintsRemaining = 2;
+    let yoyoHintsRemaining = 1;
+    
+    let activeYoyoHint = "";
+    let activeYoyoWordIdx = -1;
     let solvedWords = [false, false, false, false], revealedLetters = [[0],[0],[0],[0]], gematriaRevealed = [false, false, false, false];
 
     function calculateGematria(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); }
     function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        currentTimer = 1000;
+        updateTimerUI();
+        
+        timerInterval = setInterval(() => {
+            currentTimer--;
+            if (currentTimer <= 0) {
+                currentTimer = 0;
+                clearInterval(timerInterval);
+                updateTimerUI();
+                showGameOver(false, false, "נגמר הזמן למילה!");
+            } else {
+                updateTimerUI();
+            }
+        }, 60); // 60ms * 1000 = 60,000ms = 1 דקה
+    }
+
+    function decreaseTimer(amount) {
+        currentTimer -= amount;
+        if (currentTimer <= 0) {
+            currentTimer = 0;
+            updateTimerUI();
+            clearInterval(timerInterval);
+            showGameOver(false, false, "המונה הגיע לאפס!");
+            return true;
+        }
+        updateTimerUI();
+        return false;
+    }
+
+    function updateTimerUI() {
+        const tEl = document.getElementById('word-timer');
+        if (!tEl) return;
+        tEl.innerText = currentTimer;
+        
+        if (currentTimer < 200) {
+            tEl.classList.remove('text-purple-600');
+            tEl.classList.add('text-red-600', 'timer-pulse');
+        } else {
+            tEl.classList.add('text-purple-600');
+            tEl.classList.remove('text-red-600', 'timer-pulse');
+        }
+    }
 
     function initGame() {
         if (usedIndices.length === 8) { showGameOver(true); return; }
@@ -197,8 +268,15 @@
         usedIndices.push(r); currentCategory = categoryPools[r];
         currentWords = [getRandom(currentCategory.pools['נ']), getRandom(currentCategory.pools['ע']), getRandom(currentCategory.pools['מ']), getRandom(currentCategory.pools['ה'])];
         
-        letterHintsRemaining = 5; gematriaHintsRemaining = 2;
+        letterHintsRemaining = 3; 
+        gematriaHintsRemaining = 2;
+        yoyoHintsRemaining = 1;
+        activeYoyoHint = "";
+        activeYoyoWordIdx = -1;
+
         solvedWords = [false,false,false,false]; gematriaRevealed = [false,false,false,false]; revealedLetters = [[0],[0],[0],[0]];
+        
+        startTimer(); // הפעלת המונה לתחילת השלב
         
         updateUI(); document.getElementById('feedback').innerText = ""; 
         document.getElementById('word-input').value = ""; document.getElementById('word-input').focus();
@@ -219,7 +297,6 @@
     function updateUI() {
         const catNameEl = document.getElementById('category-name');
         
-        // מפעיל אנימציית לוח שדה תעופה רק כשקטגוריה מתחלפת
         if (catNameEl.dataset.currentName !== currentCategory.name) {
             catNameEl.dataset.currentName = currentCategory.name;
             let iteration = 0;
@@ -231,7 +308,7 @@
                     .split("")
                     .map((letter, index) => {
                         if(index < Math.floor(iteration)) return letter;
-                        if(!/[א-ת]/.test(letter)) return letter; // מדלג על רווחים וסימני פיסוק
+                        if(!/[א-ת]/.test(letter)) return letter;
                         return chars[Math.floor(Math.random() * chars.length)];
                     })
                     .join("");
@@ -240,25 +317,39 @@
                     clearInterval(catNameEl.interval);
                     catNameEl.innerText = currentCategory.name;
                 }
-                iteration += 1 / 2.5; // קובע את מהירות נעילת האותיות
+                iteration += 1 / 2.5; 
             }, 30);
         }
 
         document.getElementById('score').innerText = score;
-        document.getElementById('mistakes').innerText = mistakes;
-        document.getElementById('streak').innerText = streak;
-        document.getElementById('stage-text').innerText = `שלב ${usedIndices.length}/8`;
         
-        const progress = (usedIndices.length / 8) * 100;
+        const currentStage = usedIndices.length;
+        const progress = (currentStage / 8) * 100;
         document.getElementById('progress-bar').style.width = progress + '%';
+        const circle = document.getElementById('progress-circle');
+        circle.style.right = progress + '%';
+        circle.innerText = currentStage;
         
         const lb = document.getElementById('letter-hint-btn');
         lb.disabled = letterHintsRemaining <= 0 || solvedWords.every(v => v);
-        lb.innerText = `תן לי אות (${letterHintsRemaining})`;
+        document.getElementById('letter-hint-count').innerText = `(${letterHintsRemaining})`;
         
         const gb = document.getElementById('gematria-hint-btn');
         gb.disabled = gematriaHintsRemaining <= 0 || solvedWords.every(v => v);
-        gb.innerText = `יובי תן בגימטריה (${gematriaHintsRemaining})`;
+        document.getElementById('gematria-hint-count').innerText = `(${gematriaHintsRemaining})`;
+
+        const yb = document.getElementById('yoyo-hint-btn');
+        yb.disabled = yoyoHintsRemaining <= 0 || solvedWords.every(v => v);
+        document.getElementById('yoyo-hint-count').innerText = `(${yoyoHintsRemaining})`;
+
+        const yd = document.getElementById('yoyo-display');
+        if (activeYoyoHint) {
+            yd.classList.remove('hidden');
+            yd.innerText = `ברדק: ${activeYoyoHint}`;
+        } else {
+            yd.classList.add('hidden');
+            yd.innerText = "";
+        }
 
         document.getElementById('word-input').disabled = solvedWords.every(v => v);
 
@@ -283,48 +374,48 @@
     }
 
     function checkWord() {
-        if (solvedWords.every(v => v)) return;
+        if (solvedWords.every(v => v) || currentTimer <= 0) return;
         const iF = document.getElementById('word-input'); const i = iF.value.trim(); if (!i) return;
         let fIdx = -1; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i === currentWords[x]) { fIdx = x; break; } }
         const fb = document.getElementById('feedback');
+        
         if (fIdx !== -1) {
-            const tw = currentWords[fIdx]; 
-            const al = [...tw].filter((c, x) => c !== " " && !revealedLetters[fIdx].includes(x)).length;
+            const pointsEarned = currentTimer;
+            score += pointsEarned;
             
-            // בונוס רצף
-            const bonus = Math.floor(streak / 2);
-            score += (al + bonus);
-            streak++;
+            if (fIdx === activeYoyoWordIdx) {
+                activeYoyoHint = "";
+                activeYoyoWordIdx = -1;
+            }
             
             solvedWords[fIdx] = true;
-            const sc = new Set([...tw].filter(c => c !== " "));
+            const sc = new Set([...currentWords[fIdx]].filter(c => c !== " "));
             currentWords.forEach((w, wI) => { if (!solvedWords[wI]) { [...w].forEach((c, cI) => { if (sc.has(c) && !revealedLetters[wI].includes(cI)) revealedLetters[wI].push(cI); }); } });
             
-            fb.innerText = `מצוין! ${bonus > 0 ? '(+ בונוס רצף!)' : ''}`;
+            fb.innerText = `מצוין! (+${pointsEarned})`;
             fb.className = "mt-6 text-center h-6 font-bold text-lg text-green-600";
             iF.value = "";
             
             if (solvedWords.every(v => v)) {
+                clearInterval(timerInterval); // עוצרים את המונה כדי שלא ירד בזמן המעבר לשלב הבא
+                activeYoyoHint = ""; 
                 createConfetti();
                 setTimeout(() => { fb.innerText = "שלב הושלם! כל הכבוד!"; setTimeout(initGame, 1500); }, 500);
+            } else {
+                startTimer(); // מאפסים את המונה חזרה ל-1000 למילה הבאה
             }
             updateUI();
         } else {
             let nm = false; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i[0] === currentWords[x][0] && i.length === currentWords[x].length) { nm = true; break; } }
-            mistakes--; streak = 0;
-            const fU = solvedWords.indexOf(false); const p = fU !== -1 ? currentWords[fU].replace(/\s/g, '').length : 5; 
-            score = Math.max(0, score - p);
             
-            fb.innerText = nm ? "נסיון יפה אבל חשבתי על משהו אחר" : `טעות! (יורדות ${p} נקודות)`;
-            fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
-            document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
-            iF.value = "";
-
-            if (mistakes <= 0) {
-                solvedWords = [true,true,true,true];
-                updateUI();
-                setTimeout(() => showGameOver(false, false), 4000);
-            } else {
+            // עונש של 50 נקודות מהמונה על טעות כדי למנוע "ספאם" ניחושים
+            const isGameOver = decreaseTimer(50);
+            
+            if (!isGameOver) {
+                fb.innerText = nm ? "נסיון יפה אבל חשבתי על משהו אחר (-50 מהמונה)" : `טעות! (-50 מהמונה)`;
+                fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
+                document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
+                iF.value = "";
                 updateUI();
             }
         }
@@ -332,6 +423,8 @@
 
     function getLetterHint() {
         if (letterHintsRemaining <= 0 || solvedWords.every(v => v)) return;
+        if (decreaseTimer(100)) return; // מוריד 100 ומסיים אם הגיע לאפס
+        
         const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
         const randomWordIdx = uI[Math.floor(Math.random() * uI.length)];
@@ -346,27 +439,63 @@
 
     function getGematriaHint() {
         if (gematriaHintsRemaining <= 0 || solvedWords.every(v => v)) return;
+        if (decreaseTimer(100)) return;
+        
         const uI = solvedWords.map((v, x) => (!v && !gematriaRevealed[x] ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
         gematriaRevealed[uI[Math.floor(Math.random() * uI.length)]] = true;
         gematriaHintsRemaining--; updateUI();
     }
 
-    function giveUp() { 
-        if (solvedWords.every(v => v)) return;
-        solvedWords = [true,true,true,true]; 
-        updateUI(); 
-        setTimeout(() => showGameOver(false, true), 4000); 
+    function getYoyoHint() {
+        if (yoyoHintsRemaining <= 0 || solvedWords.every(v => v)) return;
+        if (decreaseTimer(100)) return;
+        
+        const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
+        if (uI.length === 0) return;
+        
+        const randomWordIdx = uI[Math.floor(Math.random() * uI.length)];
+        const wordToScramble = currentWords[randomWordIdx].replace(/\s/g, ''); 
+        
+        let scrambled = wordToScramble;
+        while (scrambled === wordToScramble && wordToScramble.length > 1) {
+            scrambled = scrambled.split('').sort(() => 0.5 - Math.random()).join('');
+        }
+        
+        activeYoyoHint = scrambled;
+        activeYoyoWordIdx = randomWordIdx;
+        yoyoHintsRemaining--;
+        updateUI();
     }
 
-    function showGameOver(won, gU = false) {
+    function showGameOver(won, gU = false, reason = "") {
+        clearInterval(timerInterval);
         const m = document.getElementById('modal'); const b = document.getElementById('modal-body'); m.classList.remove('hidden');
-        if (gU) { document.getElementById('modal-icon').innerText = "❤️"; b.innerText = `אין כמו נעמה ולך יש ${score} נקודות`; }
-        else if (won) { document.getElementById('modal-icon').innerText = "🏆"; b.innerText = `ניצחון מוחלט! אין כמו נעמה ולך יש ${score} נקודות`; }
-        else { document.getElementById('modal-icon').innerText = "🎮"; b.innerText = `אין כמו נעמה ולך יש ${score} נקודות`; }
+        const naamaHtml = '<span class="text-red-600 text-4xl font-black block mb-3 mt-2">אין כמו נעמה!</span>';
+        
+        if (won) { 
+            document.getElementById('modal-icon').innerText = "🏆";
+            document.getElementById('modal-title').innerText = "ניצחון מוחלט!";
+            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
+        }
+        else if (gU) { 
+            document.getElementById('modal-icon').innerText = "❤️"; 
+            document.getElementById('modal-title').innerText = "לא נורא!";
+            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
+        }
+        else { 
+            document.getElementById('modal-icon').innerText = "⏱️"; 
+            document.getElementById('modal-title').innerText = reason || "המשחק נגמר";
+            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
+        }
     }
 
-    function resetGame(f) { if (f) { score = 0; mistakes = 10; streak = 0; usedIndices = []; } document.getElementById('modal').classList.add('hidden'); initGame(); }
+    function resetGame(f) { 
+        if (f) { score = 0; usedIndices = []; } 
+        document.getElementById('modal').classList.add('hidden'); 
+        initGame(); 
+    }
+    
     document.getElementById('word-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkWord(); });
     window.onload = initGame;
 </script>
