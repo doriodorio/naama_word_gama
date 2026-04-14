@@ -101,7 +101,19 @@
 </head>
 <body class="p-2 sm:p-4 md:p-8">
 
-<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 relative overflow-hidden">
+<!-- מסך פתיחה -->
+<div id="splash-screen" class="fixed inset-0 z-50 bg-black">
+    <img src="https://raw.githubusercontent.com/doriodorio/naama_word_gama/main/Gemini_Generated_Image_n8iicln8iicln8ii.png" alt="לוגו המשחק" class="w-full h-full object-cover opacity-95">
+    
+    <!-- שכבה מעל התמונה לכפתור -->
+    <div class="absolute inset-0 flex flex-col items-center justify-end pb-16 px-6 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
+        <button onclick="startGame()" class="w-full max-w-sm bg-blue-600/90 backdrop-blur-md hover:bg-blue-700 text-white text-3xl font-black py-6 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20 pointer-events-auto">
+            התחל לשחק
+        </button>
+    </div>
+</div>
+
+<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 relative overflow-hidden hidden">
     <!-- Progress Bar with Circle -->
     <div class="relative w-full h-8 mb-6 mt-2">
         <div class="absolute top-1/2 -translate-y-1/2 right-0 w-full h-2 bg-gray-100 rounded-full"></div>
@@ -216,6 +228,12 @@
 
     function calculateGematria(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); }
     function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
+
+    function startGame() {
+        document.getElementById('splash-screen').classList.add('hidden');
+        document.getElementById('game-container').classList.remove('hidden');
+        initGame();
+    }
 
     function startTimer() {
         if (timerInterval) clearInterval(timerInterval);
@@ -497,7 +515,7 @@
     }
     
     document.getElementById('word-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkWord(); });
-    window.onload = initGame;
+    // הסרנו את window.onload = initGame כיוון שהמשחק יתחיל רק מהלחיצה על הכפתור
 </script>
 </body>
 </html>
