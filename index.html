@@ -265,8 +265,17 @@
 
     async function initFirebase() {
         try {
-            // ה-Canvas מספק את ההגדרות אוטומטית
-            const firebaseConfig = JSON.parse(__firebase_config);
+            // החלפתי להגדרות ה-Firebase האמיתיות שלך
+            const firebaseConfig = {
+                apiKey: "AIzaSyCYQjG5EPhTM50WiZhp_RnxixVJyRP1Pgs",
+                authDomain: "naamaisthebest-a75bd.firebaseapp.com",
+                projectId: "naamaisthebest-a75bd",
+                storageBucket: "naamaisthebest-a75bd.firebasestorage.app",
+                messagingSenderId: "939544674597",
+                appId: "1:939544674597:web:7fa7e1dfc3854a31cc9acc",
+                measurementId: "G-53GSNWPCJG"
+            };
+            
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
@@ -286,7 +295,7 @@
             });
         } catch (error) {
             console.error("Firebase init failed:", error);
-            // אם Firebase נכשל בסביבה המקומית, נשתמש במערך ריק
+            // אם Firebase נכשל, נציג שגיאה במקום ספינר הטעינה
             document.getElementById('leaderboard-loading').classList.add('hidden');
             document.getElementById('leaderboard-list').classList.remove('hidden');
             document.getElementById('leaderboard-list').innerHTML = '<p class="text-red-500 font-bold">לא ניתן לטעון שיאים כרגע.</p>';
@@ -296,7 +305,7 @@
     function setupScoresListener() {
         if (!user) return;
         
-        // כלל מספר 1 של ה-Canvas: שימוש בנתיב מיוחד
+        // נתיב נתונים ב-Firebase שלך
         const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
         
         unsubscribeScores = onSnapshot(scoresRef, (snapshot) => {
@@ -305,7 +314,7 @@
                 cloudHighScores.push({ id: doc.id, ...doc.data() });
             });
             
-            // מיון השיאים ב-JS (חוק 2: ללא שאילתות מורכבות)
+            // מיון השיאים מהגבוה לנמוך
             cloudHighScores.sort((a, b) => b.score - a.score);
             
             renderLeaderboard();
@@ -352,7 +361,7 @@
         });
     }
 
-    // פונקציה חשופה ל-HTML לשמירת שיא ב-Firebase
+    // פונקציה לשמירת שיא ב-Firebase
     window.saveHighScoreToCloud = async function() {
         if (!user || score <= 0) return;
         
