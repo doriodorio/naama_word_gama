@@ -1,4 +1,5 @@
-<!DOCTYPE html> 
+<!-- שם המשחק: משחק המילים נעמ"ה -->
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -170,9 +171,14 @@
                autocomplete="off">
         
         <div class="flex flex-col gap-2">
-            <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">
-                שלח מילה
-            </button>
+            <div class="flex gap-2 w-full">
+                <button onclick="checkWord()" class="w-[70%] bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">
+                    שלח מילה
+                </button>
+                <button onclick="giveUp()" class="w-[30%] bg-red-500 hover:bg-red-600 text-white text-lg font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">
+                    נשברתי
+                </button>
+            </div>
             
             <div class="grid grid-cols-3 gap-1">
                 <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg transition-all disabled:opacity-50 text-[10px] sm:text-xs hint-btn-style">
@@ -645,6 +651,21 @@
         activeYoyoWordIdx = randomWordIdx;
         yoyoHintsRemaining--;
         window.updateUI();
+    };
+
+    window.giveUp = function() {
+        if (solvedWords.every(v => v)) return;
+        
+        clearInterval(timerInterval);
+        currentTimer = 0;
+        window.updateTimerUI();
+        
+        // מסמן את כל המילים כפתורות כדי לחשוף אותן מיד
+        solvedWords = [true, true, true, true];
+        window.updateUI();
+        
+        // מחכה טיפה שהשחקן יראה את המילים ואז מעלה את מסך הסיום כמו פסילה
+        setTimeout(() => window.showGameOver(false, true, "נשברת..."), 1500);
     };
 
     window.showGameOver = function(won, gU = false, reason = "") {
