@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!DOCTYPE html> /* המשחק של נעמה */
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>משחק המילים נעמ"ה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
@@ -18,6 +18,7 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            touch-action: manipulation; /* מונע זום בטעות במובייל */
         }
 
         #words-list {
@@ -27,40 +28,41 @@
 
         .word-row { 
             display: flex; align-items: center; 
-            gap: clamp(6px, 2vw, 12px); 
-            margin-bottom: 16px; 
+            gap: clamp(4px, 1.5vw, 8px); 
+            margin-bottom: 8px; /* צומצם מ-16 */
             max-width: 100%; 
         }
         
         .letters-container { 
             display: flex; 
-            gap: clamp(3px, 1.5vw, 8px); 
+            gap: clamp(2px, 1vw, 6px); 
             flex-wrap: wrap; 
             justify-content: flex-start;
         }
 
         .letter-box {
             font-family: 'Alberticole', 'Assistant', sans-serif;
-            width: clamp(28px, 8.5vw, 45px); 
-            height: clamp(28px, 8.5vw, 45px); 
+            width: clamp(24px, 7vw, 38px); /* צומצם */
+            height: clamp(24px, 7vw, 38px); /* צומצם */
             display: flex; align-items: center; justify-content: center;
-            border: 2px solid #cbd5e0; border-radius: 8px; 
-            font-size: clamp(1.2rem, 5.5vw, 1.8rem); 
+            border: 2px solid #cbd5e0; border-radius: 6px; 
+            font-size: clamp(1rem, 4.5vw, 1.5rem); /* צומצם */
             font-weight: bold; background-color: white; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1; padding-top: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); line-height: 1; padding-top: 2px;
             flex-shrink: 0;
         }
 
         .letter-box.revealed { background-color: #e6fffa; border-color: #38b2ac; transform: rotateY(360deg); }
         .letter-box.solved { background-color: #f0fff4; border-color: #48bb78; color: #2f855a; }
-        .letter-box.first-letter { background-color: #fef3c7; border-color: #f59e0b; color: #b45309; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2); }
+        .letter-box.first-letter { background-color: #fef3c7; border-color: #f59e0b; color: #b45309; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); }
 
         .gematria-badge {
             background-color: #fffbeb; color: #92400e; border: 1px solid #fde68a;
-            padding: clamp(2px, 1vw, 4px) clamp(6px, 2vw, 12px);
-            border-radius: 20px; font-size: clamp(0.7rem, 3vw, 0.9rem);
+            padding: clamp(1px, 0.5vw, 2px) clamp(4px, 1.5vw, 8px);
+            border-radius: 12px; font-size: clamp(0.6rem, 2.5vw, 0.8rem);
             font-weight: bold; animation: fadeIn 0.5s ease;
             white-space: nowrap;
+            margin-right: 4px;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
@@ -85,7 +87,7 @@
 
         .hint-btn-style {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; min-height: 4rem; padding: 0.5rem; line-height: 1.2; text-align: center;
+            height: 100%; min-height: 3rem; padding: 0.25rem; line-height: 1.1; text-align: center; /* צומצם */
         }
 
         /* אנימציה כשהזמן אוזל */
@@ -106,95 +108,97 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-2 sm:p-4 md:p-8">
+<body class="p-1 sm:p-2 md:p-4 flex items-center justify-center min-h-[100dvh]">
 
 <!-- מסך פתיחה -->
 <div id="splash-screen" class="fixed inset-0 z-50 bg-black flex justify-center">
-    <!-- שינוי התמונה: גובה מלא, רוחב אוטומטי, מיקוד למרכז -->
     <img src="https://raw.githubusercontent.com/doriodorio/naama_word_gama/main/Gemini_Generated_Image_n8iicln8iicln8ii.png" alt="לוגו המשחק" class="h-full w-auto object-contain opacity-95">
     
-    <!-- שכבה מעל התמונה לכפתור -->
-    <div class="absolute inset-0 flex flex-col items-center justify-end pb-16 px-6 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-        <div class="flex gap-3 w-full max-w-sm pointer-events-auto">
-            <button onclick="startGame()" class="flex-1 bg-blue-600/90 backdrop-blur-md hover:bg-blue-700 text-white text-3xl font-black py-6 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20">
+    <div class="absolute inset-0 flex flex-col items-center justify-end pb-10 px-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+        <div class="flex gap-2 w-full max-w-sm pointer-events-auto">
+            <button onclick="startGame()" class="flex-1 bg-blue-600/90 backdrop-blur-md hover:bg-blue-700 text-white text-2xl font-black py-4 rounded-2xl shadow-[0_5px_15px_rgba(0,0,0,0.5)] transition-all active:scale-95 border-2 border-white/20">
                 התחל
             </button>
-            <button onclick="showLeaderboard()" title="טבלת שיאים" class="w-24 bg-amber-500/90 backdrop-blur-md hover:bg-amber-600 text-white text-4xl flex items-center justify-center rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20">
+            <button onclick="showLeaderboard()" title="טבלת שיאים" class="w-20 bg-amber-500/90 backdrop-blur-md hover:bg-amber-600 text-white text-3xl flex items-center justify-center rounded-2xl shadow-[0_5px_15px_rgba(0,0,0,0.5)] transition-all active:scale-95 border-2 border-white/20">
                 🏆
             </button>
         </div>
     </div>
 </div>
 
-<div id="game-container" class="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 relative overflow-hidden hidden">
+<div id="game-container" class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl p-3 sm:p-4 md:p-5 relative overflow-hidden hidden flex-col justify-between" style="max-height: 98vh;">
     <!-- Progress Bar with Circle -->
-    <div class="relative w-full h-8 mb-6 mt-2">
-        <div class="absolute top-1/2 -translate-y-1/2 right-0 w-full h-2 bg-gray-100 rounded-full"></div>
-        <div id="progress-bar" class="absolute top-1/2 -translate-y-1/2 right-0 h-2 bg-blue-500 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
-        <div id="progress-circle" class="absolute top-1/2 -translate-y-1/2 translate-x-1/2 bg-blue-600 border-2 border-white text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500 ease-in-out" style="right: 0%;">
+    <div class="relative w-full h-5 mb-2 mt-1">
+        <div class="absolute top-1/2 -translate-y-1/2 right-0 w-full h-1.5 bg-gray-100 rounded-full"></div>
+        <div id="progress-bar" class="absolute top-1/2 -translate-y-1/2 right-0 h-1.5 bg-blue-500 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
+        <div id="progress-circle" class="absolute top-1/2 -translate-y-1/2 translate-x-1/2 bg-blue-600 border-2 border-white text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shadow-sm transition-all duration-500 ease-in-out" style="right: 0%;">
             1
         </div>
     </div>
 
     <!-- Stats Bar -->
-    <div class="grid grid-cols-2 gap-4 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+    <div class="grid grid-cols-2 gap-2 mb-3 bg-gray-50 p-2 rounded-xl border border-gray-100">
         <div class="text-center border-l border-gray-200">
-            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">ניקוד כולל</p>
-            <p id="score" class="text-4xl font-extrabold text-blue-600 leading-none transition-all">0</p>
+            <p class="text-[9px] text-gray-500 font-bold uppercase mb-0">ניקוד כולל</p>
+            <p id="score" class="text-2xl font-extrabold text-blue-600 leading-none transition-all">0</p>
         </div>
         <div class="text-center">
-            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">מונה מילה (1 דק')</p>
-            <p id="word-timer" class="text-4xl font-extrabold text-purple-600 leading-none transition-colors">1000</p>
+            <p class="text-[9px] text-gray-500 font-bold uppercase mb-0">מונה (1 דק')</p>
+            <p id="word-timer" class="text-2xl font-extrabold text-purple-600 leading-none transition-colors">1000</p>
         </div>
     </div>
 
-    <div class="text-right mb-6">
-        <h1 id="category-name" class="text-4xl font-black text-gray-800 tracking-wider leading-tight mt-2">טוען...</h1>
+    <!-- Category Header -->
+    <div class="text-right mb-3">
+        <h1 id="category-name" class="text-2xl sm:text-3xl font-black text-gray-800 tracking-wide leading-none">טוען...</h1>
     </div>
 
-    <div class="mb-4 w-full">
+    <!-- Words List -->
+    <div class="mb-2 w-full">
         <div id="words-list"></div>
     </div>
 
-    <div id="input-controls" class="space-y-4">
+    <!-- Controls -->
+    <div id="input-controls" class="space-y-2 mt-auto">
         
         <!-- חלונית הברדק -->
-        <div id="yoyo-display" class="hidden mb-2 p-3 bg-purple-50 text-purple-700 border-2 border-purple-200 rounded-xl text-center font-bold text-xl shadow-inner transition-all"></div>
+        <div id="yoyo-display" class="hidden mb-1 p-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-center font-bold text-base shadow-inner transition-all"></div>
 
         <input type="text" id="word-input" dir="rtl"
-               class="w-full text-right text-2xl p-5 border-2 border-gray-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-50"
+               class="w-full text-right text-xl p-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-50"
                placeholder="הקלד מילה..."
                autocomplete="off">
         
-        <div class="flex flex-col gap-3">
-            <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg transition-all active:scale-95">
+        <div class="flex flex-col gap-2">
+            <button onclick="checkWord()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">
                 שלח מילה
             </button>
             
-            <div class="grid grid-cols-3 gap-2">
-                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm hint-btn-style">
+            <div class="grid grid-cols-3 gap-1">
+                <button id="letter-hint-btn" onclick="getLetterHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg transition-all disabled:opacity-50 text-[10px] sm:text-xs hint-btn-style">
                     <span>נעמה, תעזרי, תני אות</span><span id="letter-hint-count">(3)</span>
                 </button>
-                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm hint-btn-style">
+                <button id="gematria-hint-btn" onclick="getGematriaHint()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg transition-all disabled:opacity-50 text-[10px] sm:text-xs hint-btn-style">
                     <span>יובי, תן בגימטריה</span><span id="gematria-hint-count">(2)</span>
                 </button>
-                <button id="yoyo-hint-btn" onclick="getYoyoHint()" class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-xl transition-all disabled:opacity-50 text-xs sm:text-sm border border-purple-200 hint-btn-style">
+                <button id="yoyo-hint-btn" onclick="getYoyoHint()" class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-lg transition-all disabled:opacity-50 text-[10px] sm:text-xs border border-purple-200 hint-btn-style">
                     <span>יויו, עשה ברדק!</span><span id="yoyo-hint-count">(1)</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="feedback" class="mt-6 text-center h-6 font-bold text-lg"></div>
+    <!-- Feedback -->
+    <div id="feedback" class="mt-2 text-center h-5 font-bold text-base"></div>
 </div>
 
+<!-- Modal -->
 <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl">
-        <div id="modal-icon" class="mb-4 text-7xl">🎮</div>
-        <h2 id="modal-title" class="text-3xl font-black mb-2">המשחק נגמר</h2>
-        <!-- שונה ל-div כדי לתמוך בשדות קלט בפנים -->
-        <div id="modal-body" class="text-xl text-gray-600 mb-8 font-medium leading-relaxed"></div>
-        <button id="modal-action-btn" onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg hidden">
+    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl">
+        <div id="modal-icon" class="mb-2 text-6xl">🎮</div>
+        <h2 id="modal-title" class="text-2xl font-black mb-2">המשחק נגמר</h2>
+        <div id="modal-body" class="text-lg text-gray-600 mb-6 font-medium leading-relaxed"></div>
+        <button id="modal-action-btn" onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 shadow-lg transition-all active:scale-95 text-lg hidden">
             שחק שוב
         </button>
     </div>
@@ -202,17 +206,17 @@
 
 <!-- מודל טבלת שיאים -->
 <div id="leaderboard-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[60]">
-    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative">
-        <button onclick="closeLeaderboard()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-800 text-3xl font-bold">&times;</button>
-        <h2 class="text-3xl font-black mb-6 text-blue-600 tracking-tight">🏆 אלופי נעמ"ה</h2>
+    <div class="bg-white rounded-[2rem] p-6 max-w-sm w-full text-center shadow-2xl relative">
+        <button onclick="closeLeaderboard()" class="absolute top-3 left-4 text-gray-400 hover:text-gray-800 text-3xl font-bold">&times;</button>
+        <h2 class="text-2xl font-black mb-4 text-blue-600 tracking-tight">🏆 אלופי נעמ"ה</h2>
         
         <div id="leaderboard-loading" class="loader"></div>
         
-        <div id="leaderboard-list" class="space-y-3 mb-8 max-h-[50vh] overflow-y-auto pr-2 hidden">
+        <div id="leaderboard-list" class="space-y-2 mb-6 max-h-[50vh] overflow-y-auto pr-2 hidden">
             <!-- Scores go here -->
         </div>
         
-        <button onclick="closeLeaderboard(); if(!document.getElementById('game-container').classList.contains('hidden')){resetGame(true);}" class="w-full bg-gray-100 text-gray-800 font-black py-4 rounded-2xl hover:bg-gray-200 transition-all active:scale-95 text-lg mt-4">
+        <button onclick="closeLeaderboard(); if(!document.getElementById('game-container').classList.contains('hidden')){resetGame(true);}" class="w-full bg-gray-100 text-gray-800 font-black py-3 rounded-xl hover:bg-gray-200 transition-all active:scale-95 text-base mt-2">
             סגור טבלה
         </button>
     </div>
@@ -260,12 +264,10 @@
     let auth, db, user, unsubscribeScores;
     let cloudHighScores = [];
     
-    // מזהה הפרויקט של ה-Canvas
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-naama-game-id';
 
     async function initFirebase() {
         try {
-            // החלפתי להגדרות ה-Firebase האמיתיות שלך
             const firebaseConfig = {
                 apiKey: "AIzaSyCYQjG5EPhTM50WiZhp_RnxixVJyRP1Pgs",
                 authDomain: "naamaisthebest-a75bd.firebaseapp.com",
@@ -280,10 +282,15 @@
             auth = getAuth(app);
             db = getFirestore(app);
 
-            // התחברות ל-Firebase
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (authError) {
+                // מתגבר על שגיאת התנגשות (custom-token-mismatch) ועובר ישירות להתחברות אנונימית למסד הנתונים שלך
+                console.warn("מתחבר אנונימית למסד הנתונים הפרטי...");
                 await signInAnonymously(auth);
             }
 
@@ -295,7 +302,6 @@
             });
         } catch (error) {
             console.error("Firebase init failed:", error);
-            // אם Firebase נכשל, נציג שגיאה במקום ספינר הטעינה
             document.getElementById('leaderboard-loading').classList.add('hidden');
             document.getElementById('leaderboard-list').classList.remove('hidden');
             document.getElementById('leaderboard-list').innerHTML = '<p class="text-red-500 font-bold">לא ניתן לטעון שיאים כרגע.</p>';
@@ -304,8 +310,6 @@
 
     function setupScoresListener() {
         if (!user) return;
-        
-        // נתיב נתונים ב-Firebase שלך
         const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
         
         unsubscribeScores = onSnapshot(scoresRef, (snapshot) => {
@@ -313,10 +317,7 @@
             snapshot.forEach((doc) => {
                 cloudHighScores.push({ id: doc.id, ...doc.data() });
             });
-            
-            // מיון השיאים מהגבוה לנמוך
             cloudHighScores.sort((a, b) => b.score - a.score);
-            
             renderLeaderboard();
         }, (error) => {
             console.error("Error fetching scores:", error);
@@ -332,11 +333,10 @@
         list.innerHTML = "";
         
         if (cloudHighScores.length === 0) {
-            list.innerHTML = '<p class="text-gray-500 font-bold text-center">עדיין אין שיאים. היה הראשון!</p>';
+            list.innerHTML = '<p class="text-gray-500 font-bold text-center text-sm">עדיין אין שיאים. היה הראשון!</p>';
             return;
         }
 
-        // נציג רק את ה-20 הטובים ביותר
         const topScores = cloudHighScores.slice(0, 20);
         
         topScores.forEach((entry, index) => {
@@ -346,13 +346,12 @@
             else if (index === 1) { rankClass = "bg-gray-100 text-gray-800 border border-gray-300 shadow-sm"; medal = "🥈"; }
             else if (index === 2) { rankClass = "bg-orange-50 text-orange-800 border border-orange-200 shadow-sm"; medal = "🥉"; }
 
-            // נגן מפני XSS
             const safeName = entry.name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
             list.innerHTML += `
-                <div class="flex justify-between items-center p-3 rounded-xl ${rankClass} font-bold text-lg mb-2">
-                    <div class="flex items-center gap-3">
-                        <span class="w-6 text-center text-xl">${medal || (index + 1)}</span>
+                <div class="flex justify-between items-center p-2 rounded-lg ${rankClass} font-bold text-sm mb-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 text-center text-base">${medal || (index + 1)}</span>
                         <span>${safeName}</span>
                     </div>
                     <span class="text-blue-600">${entry.score}</span>
@@ -361,7 +360,6 @@
         });
     }
 
-    // פונקציה לשמירת שיא ב-Firebase
     window.saveHighScoreToCloud = async function() {
         if (!user || score <= 0) return;
         
@@ -390,7 +388,6 @@
         }
     };
 
-    // פונקציות משחק שחשופות ל-HTML
     window.calculateGematria = function(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); };
     window.getRandom = function(p) { return p[Math.floor(Math.random() * p.length)]; };
 
@@ -544,7 +541,7 @@
                 const b = document.createElement('div'); b.className = `letter-box ${cIdx === 0 ? 'first-letter' : ''}`;
                 if (char === " ") { 
                     b.style.border = "none"; b.style.background = "transparent"; 
-                    b.style.width = "clamp(10px, 3vw, 15px)"; b.style.boxShadow = "none";
+                    b.style.width = "clamp(8px, 2vw, 12px)"; b.style.boxShadow = "none";
                 }
                 else if (solvedWords[idx] || revealedLetters[idx].includes(cIdx)) { b.innerText = char; b.classList.add('revealed'); if (solvedWords[idx]) b.classList.add('solved'); }
                 else { b.innerText = ""; }
@@ -576,7 +573,7 @@
             currentWords.forEach((w, wI) => { if (!solvedWords[wI]) { [...w].forEach((c, cI) => { if (sc.has(c) && !revealedLetters[wI].includes(cI)) revealedLetters[wI].push(cI); }); } });
             
             fb.innerText = `מצוין! (+${pointsEarned})`;
-            fb.className = "mt-6 text-center h-6 font-bold text-lg text-green-600";
+            fb.className = "mt-2 text-center h-5 font-bold text-base text-green-600";
             iF.value = "";
             
             if (solvedWords.every(v => v)) {
@@ -595,7 +592,7 @@
             
             if (!isGameOver) {
                 fb.innerText = nm ? "נסיון יפה אבל חשבתי על משהו אחר (-50 מהמונה)" : `טעות! (-50 מהמונה)`;
-                fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
+                fb.className = `mt-2 text-center h-5 font-bold text-base ${nm ? 'text-amber-600' : 'text-red-600'}`;
                 document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
                 iF.value = "";
                 window.updateUI();
@@ -653,7 +650,7 @@
     window.showGameOver = function(won, gU = false, reason = "") {
         clearInterval(timerInterval);
         const m = document.getElementById('modal'); const b = document.getElementById('modal-body'); m.classList.remove('hidden');
-        const naamaHtml = '<span class="text-red-600 text-4xl font-black block mb-3 mt-2">אין כמו נעמה!</span>';
+        const naamaHtml = '<span class="text-red-600 text-3xl font-black block mb-2 mt-1">אין כמו נעמה!</span>';
         
         if (won) { 
             document.getElementById('modal-icon').innerText = "🏆";
@@ -671,21 +668,21 @@
         let htmlContent = `${naamaHtml}ולך יש <span class="text-blue-600 font-black">${score}</span> נקודות<br>`;
         
         const actionBtn = document.getElementById('modal-action-btn');
-        actionBtn.classList.remove('hidden'); // מציג מחדש למקרה שהוסתר בעבר
+        actionBtn.classList.remove('hidden'); 
         
         if (score > 0) {
             htmlContent += `
-                <div class="mt-5 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <p class="text-sm text-gray-500 font-bold mb-2">הכנס שם לשמירת השיא בענן:</p>
-                    <input type="text" id="player-name" placeholder="השם שלך..." class="w-full text-center p-3 border-2 border-gray-200 rounded-xl mb-3 font-bold focus:border-blue-500 focus:outline-none" maxlength="15">
-                    <button id="submit-score-btn" onclick="saveHighScoreToCloud()" class="w-full bg-green-500 text-white font-black py-3 rounded-xl hover:bg-green-600 shadow-md transition-all active:scale-95">שמור שיא!</button>
+                <div class="mt-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p class="text-xs text-gray-500 font-bold mb-2">הכנס שם לשמירת השיא בענן:</p>
+                    <input type="text" id="player-name" placeholder="השם שלך..." class="w-full text-center p-2 border-2 border-gray-200 rounded-lg mb-2 font-bold focus:border-blue-500 focus:outline-none" maxlength="15">
+                    <button id="submit-score-btn" onclick="saveHighScoreToCloud()" class="w-full bg-green-500 text-white font-black py-2 rounded-lg hover:bg-green-600 shadow-sm transition-all active:scale-95 text-sm">שמור שיא!</button>
                 </div>
             `;
             actionBtn.innerText = "דלג ושחק שוב";
-            actionBtn.className = "w-full bg-gray-300 text-gray-700 font-black py-4 rounded-2xl hover:bg-gray-400 transition-all active:scale-95 text-lg mt-2";
+            actionBtn.className = "w-full bg-gray-300 text-gray-700 font-black py-3 rounded-xl hover:bg-gray-400 transition-all active:scale-95 text-base mt-2";
         } else {
             actionBtn.innerText = "שחק שוב";
-            actionBtn.className = "w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg";
+            actionBtn.className = "w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 shadow-md transition-all active:scale-95 text-base";
         }
         
         b.innerHTML = htmlContent;
