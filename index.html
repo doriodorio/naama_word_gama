@@ -97,6 +97,13 @@
         .timer-pulse {
             animation: timerPulse 0.6s infinite;
         }
+
+        /* ספינר טעינה */
+        .loader {
+            border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-2 sm:p-4 md:p-8">
@@ -108,9 +115,14 @@
     
     <!-- שכבה מעל התמונה לכפתור -->
     <div class="absolute inset-0 flex flex-col items-center justify-end pb-16 px-6 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-        <button onclick="startGame()" class="w-full max-w-sm bg-blue-600/90 backdrop-blur-md hover:bg-blue-700 text-white text-3xl font-black py-6 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20 pointer-events-auto">
-            התחל לשחק
-        </button>
+        <div class="flex gap-3 w-full max-w-sm pointer-events-auto">
+            <button onclick="startGame()" class="flex-1 bg-blue-600/90 backdrop-blur-md hover:bg-blue-700 text-white text-3xl font-black py-6 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20">
+                התחל
+            </button>
+            <button onclick="showLeaderboard()" title="טבלת שיאים" class="w-24 bg-amber-500/90 backdrop-blur-md hover:bg-amber-600 text-white text-4xl flex items-center justify-center rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] transition-all active:scale-95 border-2 border-white/20">
+                🏆
+            </button>
+        </div>
     </div>
 </div>
 
@@ -180,15 +192,40 @@
     <div class="bg-white rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl">
         <div id="modal-icon" class="mb-4 text-7xl">🎮</div>
         <h2 id="modal-title" class="text-3xl font-black mb-2">המשחק נגמר</h2>
-        <p id="modal-body" class="text-xl text-gray-600 mb-8 font-medium leading-relaxed"></p>
-        <button id="modal-action-btn" onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg">
+        <!-- שונה ל-div כדי לתמוך בשדות קלט בפנים -->
+        <div id="modal-body" class="text-xl text-gray-600 mb-8 font-medium leading-relaxed"></div>
+        <button id="modal-action-btn" onclick="resetGame(true)" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg hidden">
             שחק שוב
         </button>
     </div>
 </div>
 
-<script>
-    const categoryPools = [
+<!-- מודל טבלת שיאים -->
+<div id="leaderboard-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative">
+        <button onclick="closeLeaderboard()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-800 text-3xl font-bold">&times;</button>
+        <h2 class="text-3xl font-black mb-6 text-blue-600 tracking-tight">🏆 אלופי נעמ"ה</h2>
+        
+        <div id="leaderboard-loading" class="loader"></div>
+        
+        <div id="leaderboard-list" class="space-y-3 mb-8 max-h-[50vh] overflow-y-auto pr-2 hidden">
+            <!-- Scores go here -->
+        </div>
+        
+        <button onclick="closeLeaderboard(); if(!document.getElementById('game-container').classList.contains('hidden')){resetGame(true);}" class="w-full bg-gray-100 text-gray-800 font-black py-4 rounded-2xl hover:bg-gray-200 transition-all active:scale-95 text-lg mt-4">
+            סגור טבלה
+        </button>
+    </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // משתנים גלובליים למשחק
+    window.categoryPools = [
         { name: "חיות", pools: { 'נ': ["נמר", "נחש", "נשר", "נמלה"], 'ע': ["עטלף", "עכביש", "עקרב", "עורב"], 'מ': ["מקק", "מדוזה", "ממותה", "מיינה"], 'ה': ["היפופוטם", "הודו", "הוברה"] }},
         { name: "פירות וירקות", pools: { 'נ': ["נקטרינה", "נענע", "נבטים"], 'ע': ["ענבים", "עגבנייה", "עירית", "עולש"], 'מ': ["מלון", "מלפפון", "מנגו", "מנדרינה"], 'ה': ["הדר", "הל"] }},
         { name: "חפצים בבית", pools: { 'נ': ["נברשת", "נר", "נפה", "נייר"], 'ע': ["עציץ", "עריסה", "עיתון", "עט"], 'מ': ["מנורה", "מראה", "מגהץ", "מזלג"], 'ה': ["הדום", "הליכון"] }},
@@ -211,63 +248,181 @@
         { name: "אמנות ויצירה", pools: { 'נ': ["נייר", "נצנצים"], 'ע': ["עט", "עיצוב", "עיפרון"], 'מ': ["מכחול", "מספריים"], 'ה': ["הבלטה", "הדבקה"] }}
     ];
 
-    const gematriaMap = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
+    window.gematriaMap = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
     
-    let usedIndices = [], currentCategory = null, currentWords = [], score = 0;
+    window.usedIndices = []; window.currentCategory = null; window.currentWords = []; window.score = 0;
+    window.currentTimer = 1000; window.timerInterval = null;
+    window.letterHintsRemaining = 3; window.gematriaHintsRemaining = 2; window.yoyoHintsRemaining = 1;
+    window.activeYoyoHint = ""; window.activeYoyoWordIdx = -1;
+    window.solvedWords = [false, false, false, false]; window.revealedLetters = [[0],[0],[0],[0]]; window.gematriaRevealed = [false, false, false, false];
+
+    // Firebase Setup
+    let auth, db, user, unsubscribeScores;
+    let cloudHighScores = [];
     
-    // משתני המונה החדשים
-    let currentTimer = 1000;
-    let timerInterval = null;
+    // מזהה הפרויקט של ה-Canvas
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-naama-game-id';
 
-    let letterHintsRemaining = 3;
-    let gematriaHintsRemaining = 2;
-    let yoyoHintsRemaining = 1;
-    
-    let activeYoyoHint = "";
-    let activeYoyoWordIdx = -1;
-    let solvedWords = [false, false, false, false], revealedLetters = [[0],[0],[0],[0]], gematriaRevealed = [false, false, false, false];
+    async function initFirebase() {
+        try {
+            // ה-Canvas מספק את ההגדרות אוטומטית
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
 
-    function calculateGematria(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); }
-    function getRandom(p) { return p[Math.floor(Math.random() * p.length)]; }
+            // התחברות ל-Firebase
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
 
-    function startGame() {
-        document.getElementById('splash-screen').classList.add('hidden');
-        document.getElementById('game-container').classList.remove('hidden');
-        initGame();
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) {
+                    setupScoresListener();
+                }
+            });
+        } catch (error) {
+            console.error("Firebase init failed:", error);
+            // אם Firebase נכשל בסביבה המקומית, נשתמש במערך ריק
+            document.getElementById('leaderboard-loading').classList.add('hidden');
+            document.getElementById('leaderboard-list').classList.remove('hidden');
+            document.getElementById('leaderboard-list').innerHTML = '<p class="text-red-500 font-bold">לא ניתן לטעון שיאים כרגע.</p>';
+        }
     }
 
-    function startTimer() {
+    function setupScoresListener() {
+        if (!user) return;
+        
+        // כלל מספר 1 של ה-Canvas: שימוש בנתיב מיוחד
+        const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+        
+        unsubscribeScores = onSnapshot(scoresRef, (snapshot) => {
+            cloudHighScores = [];
+            snapshot.forEach((doc) => {
+                cloudHighScores.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // מיון השיאים ב-JS (חוק 2: ללא שאילתות מורכבות)
+            cloudHighScores.sort((a, b) => b.score - a.score);
+            
+            renderLeaderboard();
+        }, (error) => {
+            console.error("Error fetching scores:", error);
+        });
+    }
+
+    function renderLeaderboard() {
+        const list = document.getElementById('leaderboard-list');
+        const loader = document.getElementById('leaderboard-loading');
+        
+        loader.classList.add('hidden');
+        list.classList.remove('hidden');
+        list.innerHTML = "";
+        
+        if (cloudHighScores.length === 0) {
+            list.innerHTML = '<p class="text-gray-500 font-bold text-center">עדיין אין שיאים. היה הראשון!</p>';
+            return;
+        }
+
+        // נציג רק את ה-20 הטובים ביותר
+        const topScores = cloudHighScores.slice(0, 20);
+        
+        topScores.forEach((entry, index) => {
+            let rankClass = "bg-gray-50 text-gray-700";
+            let medal = "";
+            if (index === 0) { rankClass = "bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-sm"; medal = "🥇"; }
+            else if (index === 1) { rankClass = "bg-gray-100 text-gray-800 border border-gray-300 shadow-sm"; medal = "🥈"; }
+            else if (index === 2) { rankClass = "bg-orange-50 text-orange-800 border border-orange-200 shadow-sm"; medal = "🥉"; }
+
+            // נגן מפני XSS
+            const safeName = entry.name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            list.innerHTML += `
+                <div class="flex justify-between items-center p-3 rounded-xl ${rankClass} font-bold text-lg mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-6 text-center text-xl">${medal || (index + 1)}</span>
+                        <span>${safeName}</span>
+                    </div>
+                    <span class="text-blue-600">${entry.score}</span>
+                </div>
+            `;
+        });
+    }
+
+    // פונקציה חשופה ל-HTML לשמירת שיא ב-Firebase
+    window.saveHighScoreToCloud = async function() {
+        if (!user || score <= 0) return;
+        
+        const nameInput = document.getElementById('player-name');
+        const playerName = nameInput && nameInput.value.trim() !== "" ? nameInput.value.trim() : "שחקן אלמוני";
+        const submitBtn = document.getElementById('submit-score-btn');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerText = "שומר...";
+        
+        try {
+            const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+            await addDoc(scoresRef, {
+                name: playerName,
+                score: score,
+                userId: user.uid,
+                timestamp: serverTimestamp()
+            });
+            
+            document.getElementById('modal').classList.add('hidden');
+            window.showLeaderboard();
+        } catch (error) {
+            console.error("Error saving score:", error);
+            submitBtn.disabled = false;
+            submitBtn.innerText = "שגיאה. נסה שוב";
+        }
+    };
+
+    // פונקציות משחק שחשופות ל-HTML
+    window.calculateGematria = function(w) { return [...w].reduce((s, c) => s + (gematriaMap[c] || 0), 0); };
+    window.getRandom = function(p) { return p[Math.floor(Math.random() * p.length)]; };
+
+    window.startGame = function() {
+        document.getElementById('splash-screen').classList.add('hidden');
+        document.getElementById('game-container').classList.remove('hidden');
+        window.initGame();
+    };
+
+    window.startTimer = function() {
         if (timerInterval) clearInterval(timerInterval);
         currentTimer = 1000;
-        updateTimerUI();
+        window.updateTimerUI();
         
         timerInterval = setInterval(() => {
             currentTimer--;
             if (currentTimer <= 0) {
                 currentTimer = 0;
                 clearInterval(timerInterval);
-                updateTimerUI();
-                showGameOver(false, false, "נגמר הזמן למילה!");
+                window.updateTimerUI();
+                window.showGameOver(false, false, "נגמר הזמן למילה!");
             } else {
-                updateTimerUI();
+                window.updateTimerUI();
             }
-        }, 60); // 60ms * 1000 = 60,000ms = 1 דקה
-    }
+        }, 60); 
+    };
 
-    function decreaseTimer(amount) {
+    window.decreaseTimer = function(amount) {
         currentTimer -= amount;
         if (currentTimer <= 0) {
             currentTimer = 0;
-            updateTimerUI();
+            window.updateTimerUI();
             clearInterval(timerInterval);
-            showGameOver(false, false, "המונה הגיע לאפס!");
+            window.showGameOver(false, false, "המונה הגיע לאפס!");
             return true;
         }
-        updateTimerUI();
+        window.updateTimerUI();
         return false;
-    }
+    };
 
-    function updateTimerUI() {
+    window.updateTimerUI = function() {
         const tEl = document.getElementById('word-timer');
         if (!tEl) return;
         tEl.innerText = currentTimer;
@@ -279,10 +434,10 @@
             tEl.classList.add('text-purple-600');
             tEl.classList.remove('text-red-600', 'timer-pulse');
         }
-    }
+    };
 
-    function initGame() {
-        if (usedIndices.length === 8) { showGameOver(true); return; }
+    window.initGame = function() {
+        if (usedIndices.length === 8) { window.showGameOver(true); return; }
         let r; do { r = Math.floor(Math.random() * categoryPools.length); } while (usedIndices.includes(r));
         usedIndices.push(r); currentCategory = categoryPools[r];
         currentWords = [getRandom(currentCategory.pools['נ']), getRandom(currentCategory.pools['ע']), getRandom(currentCategory.pools['מ']), getRandom(currentCategory.pools['ה'])];
@@ -295,13 +450,13 @@
 
         solvedWords = [false,false,false,false]; gematriaRevealed = [false,false,false,false]; revealedLetters = [[0],[0],[0],[0]];
         
-        startTimer(); // הפעלת המונה לתחילת השלב
+        window.startTimer(); 
         
-        updateUI(); document.getElementById('feedback').innerText = ""; 
+        window.updateUI(); document.getElementById('feedback').innerText = ""; 
         document.getElementById('word-input').value = ""; document.getElementById('word-input').focus();
-    }
+    };
 
-    function createConfetti() {
+    window.createConfetti = function() {
         for (let i = 0; i < 50; i++) {
             const c = document.createElement('div');
             c.className = 'confetti';
@@ -311,9 +466,9 @@
             document.body.appendChild(c);
             setTimeout(() => c.remove(), 3000);
         }
-    }
+    };
 
-    function updateUI() {
+    window.updateUI = function() {
         const catNameEl = document.getElementById('category-name');
         
         if (catNameEl.dataset.currentName !== currentCategory.name) {
@@ -390,9 +545,9 @@
             if (gematriaRevealed[idx] && !solvedWords[idx]) { const bg = document.createElement('span'); bg.className = "gematria-badge"; bg.innerText = `${calculateGematria(word)}`; row.appendChild(bg); }
             wl.appendChild(row);
         });
-    }
+    };
 
-    function checkWord() {
+    window.checkWord = function() {
         if (solvedWords.every(v => v) || currentTimer <= 0) return;
         const iF = document.getElementById('word-input'); const i = iF.value.trim(); if (!i) return;
         let fIdx = -1; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i === currentWords[x]) { fIdx = x; break; } }
@@ -416,33 +571,32 @@
             iF.value = "";
             
             if (solvedWords.every(v => v)) {
-                clearInterval(timerInterval); // עוצרים את המונה כדי שלא ירד בזמן המעבר לשלב הבא
+                clearInterval(timerInterval); 
                 activeYoyoHint = ""; 
-                createConfetti();
-                setTimeout(() => { fb.innerText = "שלב הושלם! כל הכבוד!"; setTimeout(initGame, 1500); }, 500);
+                window.createConfetti();
+                setTimeout(() => { fb.innerText = "שלב הושלם! כל הכבוד!"; setTimeout(window.initGame, 1500); }, 500);
             } else {
-                startTimer(); // מאפסים את המונה חזרה ל-1000 למילה הבאה
+                window.startTimer(); 
             }
-            updateUI();
+            window.updateUI();
         } else {
             let nm = false; for (let x = 0; x < 4; x++) { if (!solvedWords[x] && i[0] === currentWords[x][0] && i.length === currentWords[x].length) { nm = true; break; } }
             
-            // עונש של 50 נקודות מהמונה על טעות כדי למנוע "ספאם" ניחושים
-            const isGameOver = decreaseTimer(50);
+            const isGameOver = window.decreaseTimer(50);
             
             if (!isGameOver) {
                 fb.innerText = nm ? "נסיון יפה אבל חשבתי על משהו אחר (-50 מהמונה)" : `טעות! (-50 מהמונה)`;
                 fb.className = `mt-6 text-center h-6 font-bold text-lg ${nm ? 'text-amber-600' : 'text-red-600'}`;
                 document.getElementById('game-container').classList.add('shake'); setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
                 iF.value = "";
-                updateUI();
+                window.updateUI();
             }
         }
-    }
+    };
 
-    function getLetterHint() {
+    window.getLetterHint = function() {
         if (letterHintsRemaining <= 0 || solvedWords.every(v => v)) return;
-        if (decreaseTimer(100)) return; // מוריד 100 ומסיים אם הגיע לאפס
+        if (window.decreaseTimer(100)) return; 
         
         const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
@@ -452,23 +606,23 @@
         [...targetWord].forEach((c, i) => { if (c !== " " && !revealedLetters[randomWordIdx].includes(i)) unrevealedIdxs.push(i); });
         if (unrevealedIdxs.length > 0) {
             revealedLetters[randomWordIdx].push(unrevealedIdxs[Math.floor(Math.random() * unrevealedIdxs.length)]);
-            letterHintsRemaining--; updateUI();
+            letterHintsRemaining--; window.updateUI();
         }
-    }
+    };
 
-    function getGematriaHint() {
+    window.getGematriaHint = function() {
         if (gematriaHintsRemaining <= 0 || solvedWords.every(v => v)) return;
-        if (decreaseTimer(100)) return;
+        if (window.decreaseTimer(100)) return;
         
         const uI = solvedWords.map((v, x) => (!v && !gematriaRevealed[x] ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
         gematriaRevealed[uI[Math.floor(Math.random() * uI.length)]] = true;
-        gematriaHintsRemaining--; updateUI();
-    }
+        gematriaHintsRemaining--; window.updateUI();
+    };
 
-    function getYoyoHint() {
+    window.getYoyoHint = function() {
         if (yoyoHintsRemaining <= 0 || solvedWords.every(v => v)) return;
-        if (decreaseTimer(100)) return;
+        if (window.decreaseTimer(100)) return;
         
         const uI = solvedWords.map((v, x) => (!v ? x : -1)).filter(x => x !== -1);
         if (uI.length === 0) return;
@@ -484,10 +638,10 @@
         activeYoyoHint = scrambled;
         activeYoyoWordIdx = randomWordIdx;
         yoyoHintsRemaining--;
-        updateUI();
-    }
+        window.updateUI();
+    };
 
-    function showGameOver(won, gU = false, reason = "") {
+    window.showGameOver = function(won, gU = false, reason = "") {
         clearInterval(timerInterval);
         const m = document.getElementById('modal'); const b = document.getElementById('modal-body'); m.classList.remove('hidden');
         const naamaHtml = '<span class="text-red-600 text-4xl font-black block mb-3 mt-2">אין כמו נעמה!</span>';
@@ -495,28 +649,57 @@
         if (won) { 
             document.getElementById('modal-icon').innerText = "🏆";
             document.getElementById('modal-title').innerText = "ניצחון מוחלט!";
-            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
         }
         else if (gU) { 
             document.getElementById('modal-icon').innerText = "❤️"; 
             document.getElementById('modal-title').innerText = "לא נורא!";
-            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
         }
         else { 
             document.getElementById('modal-icon').innerText = "⏱️"; 
             document.getElementById('modal-title').innerText = reason || "המשחק נגמר";
-            b.innerHTML = `${naamaHtml}ולך יש ${score} נקודות`; 
         }
-    }
 
-    function resetGame(f) { 
+        let htmlContent = `${naamaHtml}ולך יש <span class="text-blue-600 font-black">${score}</span> נקודות<br>`;
+        
+        const actionBtn = document.getElementById('modal-action-btn');
+        actionBtn.classList.remove('hidden'); // מציג מחדש למקרה שהוסתר בעבר
+        
+        if (score > 0) {
+            htmlContent += `
+                <div class="mt-5 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <p class="text-sm text-gray-500 font-bold mb-2">הכנס שם לשמירת השיא בענן:</p>
+                    <input type="text" id="player-name" placeholder="השם שלך..." class="w-full text-center p-3 border-2 border-gray-200 rounded-xl mb-3 font-bold focus:border-blue-500 focus:outline-none" maxlength="15">
+                    <button id="submit-score-btn" onclick="saveHighScoreToCloud()" class="w-full bg-green-500 text-white font-black py-3 rounded-xl hover:bg-green-600 shadow-md transition-all active:scale-95">שמור שיא!</button>
+                </div>
+            `;
+            actionBtn.innerText = "דלג ושחק שוב";
+            actionBtn.className = "w-full bg-gray-300 text-gray-700 font-black py-4 rounded-2xl hover:bg-gray-400 transition-all active:scale-95 text-lg mt-2";
+        } else {
+            actionBtn.innerText = "שחק שוב";
+            actionBtn.className = "w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 shadow-xl transition-all active:scale-95 text-lg";
+        }
+        
+        b.innerHTML = htmlContent;
+    };
+
+    window.showLeaderboard = function() {
+        document.getElementById('leaderboard-modal').classList.remove('hidden');
+    };
+
+    window.closeLeaderboard = function() {
+        document.getElementById('leaderboard-modal').classList.add('hidden');
+    };
+
+    window.resetGame = function(f) { 
         if (f) { score = 0; usedIndices = []; } 
         document.getElementById('modal').classList.add('hidden'); 
-        initGame(); 
-    }
+        window.initGame(); 
+    };
+
+    document.getElementById('word-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.checkWord(); });
     
-    document.getElementById('word-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkWord(); });
-    // הסרנו את window.onload = initGame כיוון שהמשחק יתחיל רק מהלחיצה על הכפתור
+    // אתחול Firebase בטעינת העמוד
+    initFirebase();
 </script>
 </body>
 </html>
